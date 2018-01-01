@@ -78,6 +78,10 @@ extension String {
         return parts.joined(separator: self)
     }
     
+    func split(_ separator: String) -> [String] {
+        return self.components(separatedBy: separator)
+    }
+    
     func cgiEscape(quote: Bool = false) -> String {
         var result = ""
         for ch in self {

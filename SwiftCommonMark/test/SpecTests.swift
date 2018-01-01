@@ -159,13 +159,10 @@ class SpecTests {
     }
     func filterTests(_ allTests: [Test]) -> [Test] {
         let patternRe: NSRegularExpression
-        if let pattern = pattern {
-            do {
-                patternRe = try NSRegularExpression(pattern: pattern, options: .caseInsensitive)
-            } catch {
-                patternRe = try! NSRegularExpression(pattern: ".")
-            }
-        } else {
+        let pattern = self.pattern ?? "."
+        do {
+            patternRe = try NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+        } catch {
             patternRe = try! NSRegularExpression(pattern: ".")
         }
         let tests = allTests.filter{test in patternRe.search(test.section) != nil && (number == nil || test.example == number)}

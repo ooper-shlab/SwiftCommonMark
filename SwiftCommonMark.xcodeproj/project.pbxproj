@@ -48,10 +48,12 @@
 		D7C5D8FD1FF9029E00C607DA /* StdIO+.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7EB65D71FE572830068D4EF /* StdIO+.swift */; };
 		D7C5D8FE1FF903A900C607DA /* spec.txt in Resources */ = {isa = PBXBuildFile; fileRef = D7F361A61FEE844D004E13B3 /* spec.txt */; };
 		D7C5D9001FF9330800C607DA /* RoudtripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8FF1FF9330800C607DA /* RoudtripTests.swift */; };
+		D7C5D9091FFA61FC00C607DA /* EntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D9081FFA61FC00C607DA /* EntityTests.swift */; };
+		D7C5D90A1FFA677900C607DA /* entities.inc in Sources */ = {isa = PBXBuildFile; fileRef = D7549A521FEDE69F00B44259 /* entities.inc */; };
+		D7C5D90B1FFA6CE100C607DA /* entities.inc in Resources */ = {isa = PBXBuildFile; fileRef = D7549A521FEDE69F00B44259 /* entities.inc */; };
 		D7C6B5F31FE6A712000C1411 /* SwiftCommonMarkTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C6B5F21FE6A712000C1411 /* SwiftCommonMarkTest.swift */; };
 		D7EB65D81FE572830068D4EF /* StdIO+.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7EB65D71FE572830068D4EF /* StdIO+.swift */; };
 		D7F361A81FEE844E004E13B3 /* test.md in Resources */ = {isa = PBXBuildFile; fileRef = D7F3619A1FEE844D004E13B3 /* test.md */; };
-		D7F361AC1FEE844E004E13B3 /* entity_tests.py in Resources */ = {isa = PBXBuildFile; fileRef = D7F3619E1FEE844D004E13B3 /* entity_tests.py */; };
 		D7F361AD1FEE844E004E13B3 /* fuzzing_dictionary in Resources */ = {isa = PBXBuildFile; fileRef = D7F3619F1FEE844D004E13B3 /* fuzzing_dictionary */; };
 		D7F361AF1FEE844E004E13B3 /* pathological_tests.py in Resources */ = {isa = PBXBuildFile; fileRef = D7F361A11FEE844D004E13B3 /* pathological_tests.py */; };
 		D7F361B01FEE844E004E13B3 /* regression.txt in Resources */ = {isa = PBXBuildFile; fileRef = D7F361A21FEE844D004E13B3 /* regression.txt */; };
@@ -171,6 +173,7 @@
 		D7C5D8FB1FF8F98A00C607DA /* NSRegularExpression+pythonLike.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSRegularExpression+pythonLike.swift"; sourceTree = "<group>"; };
 		D7C5D8FF1FF9330800C607DA /* RoudtripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoudtripTests.swift; sourceTree = "<group>"; };
 		D7C5D9051FFA537900C607DA /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D7C5D9081FFA61FC00C607DA /* EntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityTests.swift; sourceTree = "<group>"; };
 		D7C6B5F01FE6A712000C1411 /* SwiftCommonMarkTest.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftCommonMarkTest.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7C6B5F21FE6A712000C1411 /* SwiftCommonMarkTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCommonMarkTest.swift; sourceTree = "<group>"; };
 		D7C6B5F41FE6A712000C1411 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -178,14 +181,12 @@
 		D7F3619A1FEE844D004E13B3 /* test.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = test.md; sourceTree = "<group>"; };
 		D7F3619B1FEE844D004E13B3 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		D7F3619C1FEE844D004E13B3 /* cmark-fuzz.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "cmark-fuzz.c"; sourceTree = "<group>"; };
-		D7F3619E1FEE844D004E13B3 /* entity_tests.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = entity_tests.py; sourceTree = "<group>"; };
 		D7F3619F1FEE844D004E13B3 /* fuzzing_dictionary */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = fuzzing_dictionary; sourceTree = "<group>"; };
 		D7F361A11FEE844D004E13B3 /* pathological_tests.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = pathological_tests.py; sourceTree = "<group>"; };
 		D7F361A21FEE844D004E13B3 /* regression.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = regression.txt; sourceTree = "<group>"; };
 		D7F361A41FEE844D004E13B3 /* run-cmark-fuzz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "run-cmark-fuzz"; sourceTree = "<group>"; };
 		D7F361A51FEE844D004E13B3 /* smart_punct.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = smart_punct.txt; sourceTree = "<group>"; };
 		D7F361A61FEE844D004E13B3 /* spec.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = spec.txt; sourceTree = "<group>"; };
-		D7F361A71FEE844D004E13B3 /* spec_tests.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = spec_tests.py; sourceTree = "<group>"; };
 		D7F361B61FEE8A38004E13B3 /* SwiftCommonMark-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SwiftCommonMark-Bridging-Header.h"; sourceTree = "<group>"; };
 		D7F361BA1FEE8AB3004E13B3 /* cmark_version.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = cmark_version.c; sourceTree = "<group>"; };
 		D7F361D01FEF6A63004E13B3 /* Houdini.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Houdini.swift; sourceTree = "<group>"; };
@@ -407,7 +408,7 @@
 				D7F3619B1FEE844D004E13B3 /* CMakeLists.txt */,
 				D7F3619C1FEE844D004E13B3 /* cmark-fuzz.c */,
 				D7C5D8C61FF7BA6000C607DA /* CMark.swift */,
-				D7F3619E1FEE844D004E13B3 /* entity_tests.py */,
+				D7C5D9081FFA61FC00C607DA /* EntityTests.swift */,
 				D7F3619F1FEE844D004E13B3 /* fuzzing_dictionary */,
 				D7C5D8C81FF7D35600C607DA /* Normalize.swift */,
 				D7C5D8E81FF8E61900C607DA /* HTMLParser.swift */,
@@ -417,7 +418,6 @@
 				D7F361A41FEE844D004E13B3 /* run-cmark-fuzz */,
 				D7F361A51FEE844D004E13B3 /* smart_punct.txt */,
 				D7F361A61FEE844D004E13B3 /* spec.txt */,
-				D7F361A71FEE844D004E13B3 /* spec_tests.py */,
 				D7C5D8C41FF7ADA700C607DA /* SpecTests.swift */,
 			);
 			name = test;
@@ -513,11 +513,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D7C5D90B1FFA6CE100C607DA /* entities.inc in Resources */,
 				D7F361AD1FEE844E004E13B3 /* fuzzing_dictionary in Resources */,
 				D7C5D8FE1FF903A900C607DA /* spec.txt in Resources */,
 				D7F361B21FEE844E004E13B3 /* run-cmark-fuzz in Resources */,
 				D7F361A81FEE844E004E13B3 /* test.md in Resources */,
-				D7F361AC1FEE844E004E13B3 /* entity_tests.py in Resources */,
 				D7F361B01FEE844E004E13B3 /* regression.txt in Resources */,
 				D7F361AF1FEE844E004E13B3 /* pathological_tests.py in Resources */,
 				D7F361B31FEE844E004E13B3 /* smart_punct.txt in Resources */,
@@ -571,6 +571,7 @@
 				D7C5D8FC1FF8F98A00C607DA /* NSRegularExpression+pythonLike.swift in Sources */,
 				D7F361CD1FEE8EAA004E13B3 /* Xml.swift in Sources */,
 				D7C5D8EB1FF8EE2F00C607DA /* TextReader.swift in Sources */,
+				D7C5D90A1FFA677900C607DA /* entities.inc in Sources */,
 				D7C5D8C91FF7D35600C607DA /* Normalize.swift in Sources */,
 				D7C5D8C51FF7ADA700C607DA /* SpecTests.swift in Sources */,
 				D7F361BE1FEE8E63004E13B3 /* Blocks.swift in Sources */,
@@ -580,6 +581,7 @@
 				D7C5D8E91FF8E61900C607DA /* HTMLParser.swift in Sources */,
 				D7F361CF1FEE8F0D004E13B3 /* cmark_version.c in Sources */,
 				D7C5D8C71FF7BA6000C607DA /* CMark.swift in Sources */,
+				D7C5D9091FFA61FC00C607DA /* EntityTests.swift in Sources */,
 				D7F361C11FEE8E70004E13B3 /* CmarkCtype.swift in Sources */,
 				D7F361C61FEE8E8A004E13B3 /* Latex.swift in Sources */,
 				D7F361C71FEE8E90004E13B3 /* Node.swift in Sources */,

@@ -1072,6 +1072,12 @@ class SwiftCommonMarkTest: XCTestCase {
         XCTAssert(result.fail + result.error == 0, "Roundtrip")
     }
     
+    func testEntity() {
+        let et = EntityTests(verbose: false)
+        let (_, failed, errored) = et.run()
+        XCTAssert(failed + errored == 0, "EntityTests")
+    }
+
     func testPerformanceExample() {
         // This is an example of a performance test case.
         self.measure {
