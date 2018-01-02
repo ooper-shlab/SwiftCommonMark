@@ -272,14 +272,17 @@ private func _scan_html_block_end_5(_ p: ReEnv) -> Int {
 // Try to match a link title (in single quotes, in double quotes, or
 // in parentheses), returning number of chars matched.  Allow one
 // level of internal nesting (quotes within quotes).
+private let linkTitle1 = ("\"" & (escaped_char|Re("[^\"\\x00]"))* & "\"").compile()
+private let linkTitle2 = ("'" & (escaped_char|Re("[^'\\x00]"))* & "'").compile()
+private let linkTitle3 = ("(" & (escaped_char|Re("[^)\\x00]"))* & ")").compile()
 private func _scan_link_title(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case "\"" & (escaped_char|Re("[^\"\\x00]"))* & "\"":
+    case linkTitle1:
         return p.size(from: start)
-    case "'" & (escaped_char|Re("[^'\\x00]"))* & "'":
+    case linkTitle2:
         return p.size(from: start)
-    case "(" & (escaped_char|Re("[^)\\x00]"))* & ")":
+    case linkTitle3:
         return p.size(from: start)
     default:
         return 0

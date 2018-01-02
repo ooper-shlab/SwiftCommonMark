@@ -188,6 +188,31 @@ public class CmarkNode {
         self.flags = flags
         asType = AsType.htmlBlockType(0)
     }
+    
+    deinit {
+        nonRecursivelyFreeChildNodes()
+    }
+    
+    private func nonRecursivelyFreeChildNodes() {
+        //First, flatten all descendants
+        var nextChild = firstChild
+        while let child = nextChild {
+            if let descendant = child.firstChild {
+                descendant.prev = lastChild
+                lastChild!.next = descendant
+                lastChild = child.lastChild
+                child.firstChild = nil
+                child.lastChild = nil
+            }
+            nextChild = child.next
+        }
+        nextChild = lastChild
+        while let child = nextChild {
+            child.prev?.next = nil
+            nextChild = child.prev
+        }
+        firstChild = nil
+    }
 }
 
 extension CmarkNode {
@@ -323,7 +348,8 @@ extension CmarkNode {
     public func free() {
         S_node_unlink()
         next = nil
-        S_free_nodes()
+        //S_free_nodes()
+        nonRecursivelyFreeChildNodes()
     }
     
     /**

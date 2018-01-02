@@ -508,16 +508,18 @@ extension CmarkParser {
  * when it is no longer needed.
  */
 public func cmark_parse_document(_ str: String, _ options: CmarkOptions) -> CmarkNode {
-    return cmark_parse_document(str.cString(using: .utf8)!, str.utf8.count + 1, options)
-}
-public func cmark_parse_document(_ buffer: UnsafePointer<UInt8>, _ len: Int, _ options: CmarkOptions) -> CmarkNode {
-    let data = Data(bytes: buffer, count: len)
+    var data = str.data(using: .utf8)!
+    data.append(0)
     return cmark_parse_document(data, options)
 }
-public func cmark_parse_document(_ buffer: UnsafePointer<CChar>, _ len: Int, _ options: CmarkOptions) -> CmarkNode {
-    let data = Data(bytes: buffer, count: len)
-    return cmark_parse_document(data, options)
-}
+//public func cmark_parse_document(_ buffer: UnsafePointer<UInt8>, _ len: Int, _ options: CmarkOptions) -> CmarkNode {
+//    let data = Data(bytes: buffer, count: len)
+//    return cmark_parse_document(data, options)
+//}
+//public func cmark_parse_document(_ buffer: UnsafePointer<CChar>, _ len: Int, _ options: CmarkOptions) -> CmarkNode {
+//    let data = Data(bytes: buffer, count: len)
+//    return cmark_parse_document(data, options)
+//}
 public func cmark_parse_document(_ data: Data, _ options: CmarkOptions) -> CmarkNode {
     let parser = CmarkParser(options: options)
     

@@ -22,6 +22,13 @@ class CmarkReference {
     var url: CmarkChunk?
     var title: CmarkChunk?
     var hash: UInt32 = 0
+    
+    deinit {
+        if labelSize > 0 {
+            label?.deinitialize(count: labelSize)
+            label?.deallocate(capacity: labelSize)
+        }
+    }
 }
 
 class CmarkReferenceMap {
@@ -44,6 +51,8 @@ extension CmarkReference {
     func free() {
         label?.deinitialize(count: labelSize)
         label?.deallocate(capacity: labelSize)
+        label = nil
+        labelSize = 0
         url?.free()
         title?.free()
     }
@@ -60,24 +69,24 @@ extension CmarkChunk {
     // remove leading/trailing whitespace, case fold
     // Return NULL if the reference name is actually empty (i.e. composed
     // solely from whitespace)
-    fileprivate func normalizeReference() -> UnsafePointer<UInt8>? {
+    fileprivate func normalizeReference() -> (UnsafePointer<UInt8>?, Int) {
         let normalized = CmarkStrbuf()
         
         if len == 0 {
-            return nil
+            return (nil, 0)
         }
         
         normalized.caseFold(data, len)
         normalized.trim()
         normalized.normalizeWhitespace()
         
-        let (result, _) = normalized.detachPtr()
+        let (result, asize) = normalized.detachPtr()
         
         if result[0] == "\0" {
-            return nil
+            return (nil, asize)
         }
         
-        return UnsafePointer(result)
+        return (UnsafePointer(result), asize)
     }
 }
 
@@ -100,7 +109,7 @@ extension CmarkReferenceMap {
     
     func create(label: CmarkChunk,
                 url: CmarkChunk, title: CmarkChunk) {
-        guard let reflabel = label.normalizeReference() else {
+        guard case let (label, asize) = label.normalizeReference(), let reflabel = label else {
             
             /* empty reference name, or composed from only whitespace */
             return
@@ -108,6 +117,7 @@ extension CmarkReferenceMap {
         
         let ref = CmarkReference()
         ref.label = UnsafeMutablePointer(mutating: reflabel)
+        ref.labelSize = asize
         ref.hash = refhash(reflabel)
         ref.url = url.cleanUrl()
         ref.title = title.cleanTitle()
@@ -126,8 +136,14 @@ extension CmarkReferenceMap {
             return nil
         }
         
-        guard let norm = label.normalizeReference() else {
+        guard case let (n, aSize) = label.normalizeReference(), let norm = n else {
             return nil
+        }
+        defer {
+            if aSize > 0 {
+                UnsafeMutablePointer(mutating: norm).deinitialize(count: aSize)
+                UnsafeMutablePointer(mutating: norm).deallocate(capacity: aSize)
+            }
         }
         
         let hash = refhash(norm)

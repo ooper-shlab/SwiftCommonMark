@@ -47,6 +47,13 @@ public class CmarkChunk {
         len = 0
     }
     
+    deinit {
+        if alloc != 0 {
+            data.deinitialize(count: alloc)
+            data.deallocate(capacity: alloc)
+        }
+    }
+    
     func free() {
         if alloc != 0 {
             data.deinitialize(count: alloc)

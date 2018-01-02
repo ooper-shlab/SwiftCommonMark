@@ -1069,13 +1069,20 @@ class SwiftCommonMarkTest: XCTestCase {
         let specPath = testBundle.path(forResource: "spec", ofType: "txt")
         let st = RoundtripTests(spec: specPath!, normalize: true/*, number: 294*/)
         let result = st.run()
-        XCTAssert(result.fail + result.error == 0, "Roundtrip")
+        XCTAssert(result.fail + result.error == 0, "RoundtripTests")
     }
     
     func testEntity() {
         let et = EntityTests(verbose: false)
         let (_, failed, errored) = et.run()
         XCTAssert(failed + errored == 0, "EntityTests")
+    }
+    
+    func testPathological() {
+        //### Some test cases take minitues to hours in the current implementation, better avoid...
+        let pt = PathologicalTests(verbose: true, exclude: [/*"many references", "unclosed links A", "backticks"*/])
+        let result = pt.run()
+        XCTAssert(result.failed + result.errored == 0, "PathologicalTests")
     }
 
     func testPerformanceExample() {
@@ -1087,6 +1094,7 @@ class SwiftCommonMarkTest: XCTestCase {
     
 }
 
+//Unicode REPLACEMENT CHARACTER
 private let UTF8_REPL = "\u{FFFD}"
 
 private let nodeTypes: [CmarkNodeType] = [

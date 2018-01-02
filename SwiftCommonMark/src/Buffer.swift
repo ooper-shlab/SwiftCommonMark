@@ -26,6 +26,13 @@ class CmarkStrbuf {
     convenience init() {
         self.init(ptr: cmark_strbuf__initbuf, asize: 0, size: 0)
     }
+    
+    deinit {
+        if asize != 0 {
+            ptr.deinitialize(count: asize)
+            ptr.deallocate(capacity: asize)
+        }
+    }
 }
 //
 //static CMARK_INLINE const char *cmark_strbuf_cstr(const cmark_strbuf *buf) {
@@ -52,7 +59,7 @@ extension CmarkStrbuf {
      * For the cases where CMARK_BUF_INIT cannot be used to do static
      * initialization.
      */
-    func initialize(initialSize: Int) {
+    private func initialize(initialSize: Int) {
         self.asize = 0
         self.size = 0
         self.ptr = cmark_strbuf__initbuf
@@ -89,15 +96,19 @@ extension CmarkStrbuf {
         
         /* Oversize the buffer by 50% to guarantee amortized linear time
          * complexity on append operations. */
-        var newSize = targetSize + targetSize/2
-        newSize += 1
-        newSize = (newSize + 7) & ~7
+        var newASize = targetSize + targetSize/2
+        newASize += 1
+        newASize = (newASize + 7) & ~7
         
-        let newPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: newSize)
-        newPtr.initialize(from: self.ptr, count: self.asize)
-        (newPtr + self.asize).initialize(to: 0, count: newSize-self.asize)
+        let newPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: newASize)
+        newPtr.initialize(from: self.ptr, count: self.size)
+        (newPtr + self.size).initialize(to: 0, count: newASize-self.size)
+        if self.asize > 0 {
+            self.ptr.deinitialize(count: asize)
+            self.ptr.deallocate(capacity: asize)
+        }
         self.ptr = newPtr
-        self.asize = newSize
+        self.asize = newASize
     }
 }
 //
@@ -224,9 +235,7 @@ extension CmarkStrbuf {
         
         if self.asize == 0 {
             /* return an empty string */
-            let ptr = UnsafeMutablePointer<UInt8>.allocate(capacity: 1)
-            ptr.initialize(to: 0)
-            return (ptr, 1)
+            return (cmark_strbuf__initbuf, 0)
         }
         
         self.initialize(initialSize: 0)
