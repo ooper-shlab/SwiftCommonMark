@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D7064D281FFCC893004288A5 /* StringBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D9241FFB937600C607DA /* StringBuffer.swift */; };
+		D7064D291FFCC89F004288A5 /* StringChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D9221FFB929700C607DA /* StringChunk.swift */; };
 		D7549A891FEDE6A000B44259 /* Blocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A3F1FEDE69F00B44259 /* Blocks.swift */; };
-		D7549A8B1FEDE6A000B44259 /* Buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A421FEDE69F00B44259 /* Buffer.swift */; };
-		D7549A8D1FEDE6A000B44259 /* Chunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A451FEDE69F00B44259 /* Chunk.swift */; };
 		D7549A8F1FEDE6A000B44259 /* Cmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A491FEDE69F00B44259 /* Cmark.swift */; };
 		D7549A911FEDE6A000B44259 /* CmarkCtype.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A4D1FEDE69F00B44259 /* CmarkCtype.swift */; };
 		D7549A921FEDE6A000B44259 /* CmarkVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A4E1FEDE69F00B44259 /* CmarkVersion.swift */; };
@@ -51,6 +51,8 @@
 		D7C5D9091FFA61FC00C607DA /* EntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D9081FFA61FC00C607DA /* EntityTests.swift */; };
 		D7C5D90B1FFA6CE100C607DA /* entities.inc in Resources */ = {isa = PBXBuildFile; fileRef = D7549A521FEDE69F00B44259 /* entities.inc */; };
 		D7C5D90D1FFA7B6A00C607DA /* PathologicalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D90C1FFA7B6900C607DA /* PathologicalTests.swift */; };
+		D7C5D9231FFB929700C607DA /* StringChunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D9221FFB929700C607DA /* StringChunk.swift */; };
+		D7C5D9251FFB937600C607DA /* StringBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D9241FFB937600C607DA /* StringBuffer.swift */; };
 		D7C6B5F31FE6A712000C1411 /* SwiftCommonMarkTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C6B5F21FE6A712000C1411 /* SwiftCommonMarkTest.swift */; };
 		D7EB65D81FE572830068D4EF /* StdIO+.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7EB65D71FE572830068D4EF /* StdIO+.swift */; };
 		D7F361A81FEE844E004E13B3 /* test.md in Resources */ = {isa = PBXBuildFile; fileRef = D7F3619A1FEE844D004E13B3 /* test.md */; };
@@ -62,8 +64,6 @@
 		D7F361BC1FEE8DF8004E13B3 /* CmarkVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A4E1FEDE69F00B44259 /* CmarkVersion.swift */; };
 		D7F361BD1FEE8E29004E13B3 /* Cmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A491FEDE69F00B44259 /* Cmark.swift */; };
 		D7F361BE1FEE8E63004E13B3 /* Blocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A3F1FEDE69F00B44259 /* Blocks.swift */; };
-		D7F361BF1FEE8E67004E13B3 /* Buffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A421FEDE69F00B44259 /* Buffer.swift */; };
-		D7F361C01FEE8E6A004E13B3 /* Chunk.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A451FEDE69F00B44259 /* Chunk.swift */; };
 		D7F361C11FEE8E70004E13B3 /* CmarkCtype.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A4D1FEDE69F00B44259 /* CmarkCtype.swift */; };
 		D7F361C21FEE8E7A004E13B3 /* Commonmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A501FEDE69F00B44259 /* Commonmark.swift */; };
 		D7F361C31FEE8E7E004E13B3 /* Html.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A581FEDE69F00B44259 /* Html.swift */; };
@@ -174,6 +174,8 @@
 		D7C5D9051FFA537900C607DA /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		D7C5D9081FFA61FC00C607DA /* EntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityTests.swift; sourceTree = "<group>"; };
 		D7C5D90C1FFA7B6900C607DA /* PathologicalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathologicalTests.swift; sourceTree = "<group>"; };
+		D7C5D9221FFB929700C607DA /* StringChunk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringChunk.swift; sourceTree = "<group>"; };
+		D7C5D9241FFB937600C607DA /* StringBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringBuffer.swift; sourceTree = "<group>"; };
 		D7C6B5F01FE6A712000C1411 /* SwiftCommonMarkTest.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftCommonMarkTest.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7C6B5F21FE6A712000C1411 /* SwiftCommonMarkTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCommonMarkTest.swift; sourceTree = "<group>"; };
 		D7C6B5F41FE6A712000C1411 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -307,9 +309,11 @@
 			children = (
 				D7549A3F1FEDE69F00B44259 /* Blocks.swift */,
 				D7549A421FEDE69F00B44259 /* Buffer.swift */,
+				D7C5D9241FFB937600C607DA /* StringBuffer.swift */,
 				D7549A431FEDE69F00B44259 /* case_fold_switch.inc */,
 				D77A4E331FEFD8700057F8AD /* CaseFoldSwitch.swift */,
 				D7549A451FEDE69F00B44259 /* Chunk.swift */,
+				D7C5D9221FFB929700C607DA /* StringChunk.swift */,
 				D7549A491FEDE69F00B44259 /* Cmark.swift */,
 				D7549A4D1FEDE69F00B44259 /* CmarkCtype.swift */,
 				D7549A4E1FEDE69F00B44259 /* CmarkVersion.swift */,
@@ -531,6 +535,7 @@
 			files = (
 				D77A4E301FEF92CF0057F8AD /* Entities.swift in Sources */,
 				D7549AAD1FEDE6A100B44259 /* Scanners.swift in Sources */,
+				D7C5D9251FFB937600C607DA /* StringBuffer.swift in Sources */,
 				D7549AA01FEDE6A100B44259 /* Latex.swift in Sources */,
 				D7BD466D1FEDCB6D00F8ADA0 /* UInt8+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7549A9A1FEDE6A100B44259 /* Html.swift in Sources */,
@@ -549,12 +554,11 @@
 				D7549A9E1FEDE6A100B44259 /* Iterator.swift in Sources */,
 				D77A4E341FEFD8700057F8AD /* CaseFoldSwitch.swift in Sources */,
 				D7549A891FEDE6A000B44259 /* Blocks.swift in Sources */,
-				D7549A8D1FEDE6A000B44259 /* Chunk.swift in Sources */,
+				D7C5D9231FFB929700C607DA /* StringChunk.swift in Sources */,
 				D7549A911FEDE6A000B44259 /* CmarkCtype.swift in Sources */,
 				D7F361BB1FEE8AB3004E13B3 /* cmark_version.c in Sources */,
 				D7EB65D81FE572830068D4EF /* StdIO+.swift in Sources */,
 				D7549A9C1FEDE6A100B44259 /* Inlines.swift in Sources */,
-				D7549A8B1FEDE6A000B44259 /* Buffer.swift in Sources */,
 				D7549AA21FEDE6A100B44259 /* main.swift in Sources */,
 				D7549AAF1FEDE6A100B44259 /* Utf8.swift in Sources */,
 			);
@@ -567,8 +571,10 @@
 				D7C5D8AD1FF5249300C607DA /* Man.swift in Sources */,
 				D7F361BD1FEE8E29004E13B3 /* Cmark.swift in Sources */,
 				D7C5D8FC1FF8F98A00C607DA /* NSRegularExpression+pythonLike.swift in Sources */,
+				D7064D291FFCC89F004288A5 /* StringChunk.swift in Sources */,
 				D7F361CD1FEE8EAA004E13B3 /* Xml.swift in Sources */,
 				D7C5D8EB1FF8EE2F00C607DA /* TextReader.swift in Sources */,
+				D7064D281FFCC893004288A5 /* StringBuffer.swift in Sources */,
 				D7C5D8C91FF7D35600C607DA /* Normalize.swift in Sources */,
 				D7C5D8C51FF7ADA700C607DA /* SpecTests.swift in Sources */,
 				D7F361BE1FEE8E63004E13B3 /* Blocks.swift in Sources */,
@@ -595,12 +601,10 @@
 				D7C5D9001FF9330800C607DA /* RoudtripTests.swift in Sources */,
 				D7F361CC1FEE8EA6004E13B3 /* Utf8.swift in Sources */,
 				D7C6B5F31FE6A712000C1411 /* SwiftCommonMarkTest.swift in Sources */,
-				D7F361BF1FEE8E67004E13B3 /* Buffer.swift in Sources */,
 				D7F361C51FEE8E86004E13B3 /* Iterator.swift in Sources */,
 				D7F361BC1FEE8DF8004E13B3 /* CmarkVersion.swift in Sources */,
 				D77A4E321FEFA5A30057F8AD /* Houdini.swift in Sources */,
 				D7F361C31FEE8E7E004E13B3 /* Html.swift in Sources */,
-				D7F361C01FEE8E6A004E13B3 /* Chunk.swift in Sources */,
 				D7F361C21FEE8E7A004E13B3 /* Commonmark.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

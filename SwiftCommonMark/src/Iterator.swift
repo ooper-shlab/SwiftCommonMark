@@ -188,8 +188,8 @@ extension CmarkNode {
      */
     public func consolidateTextNodes() {
         let iter = CmarkIter(self)
-        let buf = CmarkStrbuf()
-        
+        let buf = StringBuffer()
+
         while case let evType = iter.next(), evType != .done {
             let cur = iter.getNode()
             if evType == .enter, let cur = cur, cur.type == .text,

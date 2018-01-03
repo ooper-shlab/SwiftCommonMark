@@ -61,3 +61,11 @@ extension UInt8 {
     var isDigit: Bool {return cmark_isdigit(Int32(self))}
     var isAlpha: Bool {return cmark_isalpha(Int32(self))}
 }
+
+extension UnicodeScalar {
+    var isSpace: Bool {return cmark_isspace(Int32(self.value))}
+    var isPunct: Bool {return cmark_ispunct(Int32(self.value))}
+    var isAlnum: Bool {return cmark_isalnum(Int32(self.value))}
+    var isDigit: Bool {return cmark_isdigit(Int32(self.value))}
+    var isAlpha: Bool {return cmark_isalpha(Int32(self.value))}
+}

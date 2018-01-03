@@ -24,8 +24,9 @@ import Foundation
 let CODE_INDENT = 4
 let TAB_STOP = 4
 
-extension CmarkChunk {
-    func peek(at n: Int) -> UInt8 {return data[n]}
+extension StringChunk {
+    ///n: valid UTF-8 offset from startIndex
+    func peek(at n: Int) -> UnicodeScalar {return self[n]}
 }
 
 extension CmarkNode {
@@ -52,10 +53,20 @@ extension UInt8 {
     }
 }
 
+extension UnicodeScalar {
+    var isLineEnd: Bool {
+        return self == "\n" || self == "\r"
+    }
+    
+    var isSpaceOrTab: Bool {
+        return self == " " || self == "\t"
+    }
+}
+
 extension CmarkNode {
     fileprivate convenience init(tag: CmarkNodeType, startLine: Int, startColumn: Int) {
         
-        self.init(tag: tag, content: CmarkStrbuf(initialSize: 32), flags: .open)
+        self.init(tag: tag, content: StringBuffer(capacity: 32), flags: .open)
         self.startLine = startLine
         self.startColumn = startColumn
         self.endLine = startLine
@@ -90,18 +101,17 @@ extension CmarkParser {
     
 }
 
-extension CmarkStrbuf {
+extension StringBuffer {
     // Returns true if line has only space characters, else false.
-    fileprivate func isBlank(_ _offset: Int) -> Bool {
-        var offset = _offset
-        while offset < size {
-            switch ptr[offset] {
+    fileprivate func isBlank(_ offset: Int) -> Bool {
+        var index = string.utf8.index(startIndex, offsetBy: offset)
+        let usv = string.unicodeScalars
+        while index < endIndex {
+            switch usv[index] {
             case "\r", "\n":
                 return true
-            case " ":
-                offset += 1
-            case "\t":
-                offset += 1
+            case " ", "\t":
+                index = usv.index(after: index)
             default:
                 return false
             }
@@ -133,7 +143,7 @@ extension CmarkNodeType {
 }
 
 extension CmarkParser {
-    fileprivate func add(to node: CmarkNode, line ch: CmarkChunk) {
+    fileprivate func add(to node: CmarkNode, line ch: StringChunk) {
         assert(node.flags.contains(.open))
         if partiallyConsumedTab {
             offset += 1 // skip over tab
@@ -143,39 +153,37 @@ extension CmarkParser {
                 node.content.putc(" ")
             }
         }
-        node.content.put(ch.data + offset,
-                         ch.len - offset)
+        node.content.put(ch, offset)
     }
 }
 
-extension CmarkStrbuf {
+extension StringBuffer {
     fileprivate func removeTrailingBlankLines() {
         
-        var i = size - 1
-        while i >= 0 {
-            let c = ptr[i]
+        var i = endIndex
+        let usv = string.unicodeScalars
+        while i > startIndex {
+            i = usv.index(before: i)
+            let c = usv[i]
             
             if c != " " && c != "\t" && !c.isLineEnd {
                 break
             }
-            i -= 1
         }
         
-        if i < 0 {
+        if i == startIndex {
             clear()
             return
         }
         
-        while i < size {
-            let c = ptr[i]
+        while i < endIndex {
+            let c = usv[i]
             
-            if !c.isLineEnd {
-                i += 1
-                continue
+            if c.isLineEnd {
+                truncate(i)
             }
             
-            truncate(i)
-            break
+            i = usv.index(after: i)
         }
     }
 }
@@ -215,10 +223,10 @@ extension CmarkParser {
             (b.type == .heading && b.asHeading?.setext ?? false) {
             b.endLine = lineNumber
             b.endColumn = curline.size
-            if b.endColumn != 0 && curline.ptr[b.endColumn - 1] == "\n" {
+            if b.endColumn != 0 && curline[b.endColumn - 1] == "\n" {
                 b.endColumn -= 1
             }
-            if b.endColumn != 0 && curline.ptr[b.endColumn - 1] == "\r" {
+            if b.endColumn != 0 && curline[b.endColumn - 1] == "\r" {
                 b.endColumn -= 1
             }
         } else {
@@ -230,12 +238,10 @@ extension CmarkParser {
         
         switch b.type {
         case .paragraph:
-            let chunk = CmarkChunk(content: nodeContent)
-            while chunk.len != 0 && chunk.data[0] == "[",
-                case let pos = chunk.parseReferenceInline(refmap), pos != 0 {
-                    
-                    chunk.data += pos
-                    chunk.len -= pos
+            let chunk = StringChunk(content: nodeContent)
+            while !chunk.isEmpty && chunk.first! == "[",
+                let index = chunk.parseReferenceInline(refmap) {
+                    chunk.start(from: index)
             }
             nodeContent.drop(nodeContent.size - chunk.len)
             if nodeContent.isBlank(0) {
@@ -249,30 +255,32 @@ extension CmarkParser {
                 nodeContent.putc("\n")
             } else {
                 // first line of contents becomes info
-                var pos = 0
-                while pos < nodeContent.size {
-                    if nodeContent.ptr[pos].isLineEnd {
+                var pos = nodeContent.startIndex
+                let usv = nodeContent.string.unicodeScalars
+                while pos < nodeContent.endIndex {
+                    if nodeContent[pos].isLineEnd {
                         break
                     }
-                    pos += 1
+                    
+                    pos = usv.index(after: pos)
                 }
-                assert(pos < nodeContent.size)
+                assert(pos < nodeContent.endIndex)
                 
-                let tmp = CmarkStrbuf()
-                tmp.unescapeHtmlF(nodeContent.ptr, pos)
+                let tmp = StringBuffer()
+                tmp.unescapeHtmlF(nodeContent.string, nodeContent.startIndex, pos)
                 tmp.trim()
                 tmp.unescape()
                 var code = b.asCode ?? CmarkCode()
                 code.info = tmp.bufDetach()
                 b.asType = .code(code)
                 
-                if nodeContent.ptr[pos] == "\r" {
-                    pos += 1
+                if nodeContent[pos] == "\r" {
+                    pos = usv.index(after: pos)
                 }
-                if nodeContent.ptr[pos] == "\n" {
-                    pos += 1
+                if nodeContent[pos] == "\n" {
+                    pos = usv.index(after: pos)
                 }
-                nodeContent.drop(pos)
+                nodeContent.start(from: pos)
                 
             }
             var code = b.asCode ?? CmarkCode()
@@ -366,7 +374,7 @@ extension CmarkNode {
     }
 }
 
-extension CmarkChunk {
+extension StringChunk {
     // Attempts to parse a list item marker (bullet or enumerated).
     // On success, returns length of the marker, and populates
     // data with the details.  On failure, returns 0.
@@ -408,7 +416,7 @@ extension CmarkChunk {
             var digits = 0
             
             repeat {
-                start = 10 * start + Int(peek(at: pos) - "0")
+                start = 10 * start + Int(UInt8(peek(at: pos).value) - "0")
                 pos += 1
                 digits += 1
                 // We limit to 9 digits to avoid overflow,
@@ -439,7 +447,7 @@ extension CmarkChunk {
                 data = CmarkList()
                 data?.markerOffset = 0 // will be adjusted later
                 data?.listType = .orderedList
-                data?.bulletChar = 0
+                data?.bulletChar = "\0"
                 data?.start = start
                 data?.delimiter = c == "." ? .periodDelim : .parenDelim
                 data?.tight = false
@@ -544,7 +552,6 @@ extension CmarkParser {
                       _ len: Int, _ eof: Bool) {
         var buffer = _buffer
         let end = buffer + len
-        let repl: [UInt8] = [239, 191, 189]
         
         if lastBufferEndedWithCr && buffer.pointee == "\n" {
             // skip NL if last buffer ended with CR ; see #117
@@ -570,21 +577,17 @@ extension CmarkParser {
             
             let chunkLen = eol - buffer
             if process {
-                if linebuf.size > 0 {
-                    linebuf.put(buffer, chunkLen)
-                    processLine(linebuf)
-                    linebuf.clear()
-                } else {
-                    processLine(buffer, chunkLen)
-                }
+                linebuf.put(buffer, chunkLen, options.contains(.validateUTF8))
+                processLine(linebuf)
+                linebuf.clear()
             } else {
                 if eol < end && eol.pointee == "\0" {
                     // omit NULL byte
-                    linebuf.put(buffer, chunkLen)
+                    linebuf.put(buffer, chunkLen, options.contains(.validateUTF8))
                     // add replacement character
-                    linebuf.put(repl, 3)
+                    linebuf.put("\u{FFFD}")
                 } else {
-                    linebuf.put(buffer, chunkLen)
+                    linebuf.put(buffer, chunkLen, options.contains(.validateUTF8))
                 }
             }
             
@@ -610,21 +613,23 @@ extension CmarkParser {
     }
 }
 
-extension CmarkChunk {
+extension StringChunk {
     fileprivate func chopTrailingHashtags() {
         
         rtrim()
         var n = len - 1
         let origN = n
         
+        //###TODO: repeated accessing by Int offset is inefficient
         // if string ends in space followed by #s, remove these:
         while n >= 0 && peek(at: n) == "#" {
             n -= 1
         }
         
+        //###TODO: repeated accessing by Int offset is inefficient
         // Check for a space before the final #s:
         if n != origN && n >= 0 && peek(at: n).isSpaceOrTab {
-            len = n
+            truncate(n)
             rtrim()
         }
     }
@@ -634,12 +639,12 @@ extension CmarkParser {
     // Find first nonspace character from current offset, setting
     // parser->first_nonspace, parser->first_nonspace_column,
     // parser->indent, and parser->blank. Does not advance parser->offset.
-    func findFirstNonspace(input: CmarkChunk) {
+    func findFirstNonspace(input: StringChunk) {
         var charsToTab = TAB_STOP - (column % TAB_STOP)
         
         firstNonspace = offset
         firstNonspaceColumn = column
-        while case let c = input.peek(at: firstNonspace), c != 0 {
+        while case let c = input.peek(at: firstNonspace), c != "\0" {
             if c == " " {
                 firstNonspace += 1
                 firstNonspaceColumn += 1
@@ -669,10 +674,10 @@ extension CmarkParser {
     // indicates a number of columns; otherwise, a number of bytes.
     // If advancing a certain number of columns partially consumes
     // a tab character, parser->partially_consumed_tab is set to true.
-    func advanceOffset(input: CmarkChunk,
+    func advanceOffset(input: StringChunk,
                        count _count: Int, columns: Bool) {
         var count = _count
-        while count > 0, case let c = input.peek(at: offset), c != 0 {
+        while count > 0, case let c = input.peek(at: offset), c != "\0" {
             if c == "\t" {
                 let charsToTab = TAB_STOP - (column % TAB_STOP)
                 if columns {
@@ -703,7 +708,8 @@ extension CmarkNode {
             lastChild!.flags.contains(.open)
     }
 }
-extension CmarkChunk {
+
+extension StringChunk {
     fileprivate func scanHtmlBlockStartN7(_ pos: Int, _ contType: CmarkNodeType) -> Int {
         var matchlen = scanHtmlBlockStart(pos)
         if matchlen != 0 {return matchlen}
@@ -715,7 +721,7 @@ extension CmarkChunk {
 }
 
 extension CmarkParser {
-    func parseBlockQuotePrefix(input: CmarkChunk) -> Bool {
+    func parseBlockQuotePrefix(input: StringChunk) -> Bool {
         var res = false
         
         let matched = indent <= 3 && input.peek(at: firstNonspace) == ">"
@@ -732,7 +738,7 @@ extension CmarkParser {
         return res
     }
     
-    func parseNodeItemPrefix(input: CmarkChunk, container: CmarkNode) -> Bool {
+    func parseNodeItemPrefix(input: StringChunk, container: CmarkNode) -> Bool {
         var res = false
         
         if indent >=
@@ -749,7 +755,7 @@ extension CmarkParser {
         return res
     }
     
-    func parseCodeBlockPrefix(input: CmarkChunk, container: CmarkNode, shouldContinue: inout Bool) -> Bool {
+    func parseCodeBlockPrefix(input: StringChunk, container: CmarkNode, shouldContinue: inout Bool) -> Bool {
         var res = false
         
         if !(container.asCode?.fenced ?? false) {
@@ -816,7 +822,7 @@ extension CmarkParser {
      *
      * Returns: The last matching node, or NULL
      */
-    func checkOpenBlocks(input: CmarkChunk, allMatched: inout Bool) -> CmarkNode? {
+    func checkOpenBlocks(input: StringChunk, allMatched: inout Bool) -> CmarkNode? {
         var shouldContinue = true
         allMatched = false
         var container: CmarkNode? = root
@@ -871,7 +877,7 @@ extension CmarkParser {
     }
     
     func openNewBlocks(container: inout CmarkNode,
-                       input: CmarkChunk, allMatched: Bool) {
+                       input: StringChunk, allMatched: Bool) {
         var data: CmarkList? = nil
         var maybeLazy = current?.type == .paragraph
         var contType = container.type
@@ -905,7 +911,7 @@ extension CmarkParser {
                 container = addChild(parent: container, blockType: .heading,
                                      startColumn: headingStartpos + 1)
                 
-                var hashpos = input.strchr("#", firstNonspace)
+                var hashpos = input.strchr("#", firstNonspace)!
                 
                 while input.peek(at: hashpos) == "#" {
                     level += 1
@@ -924,7 +930,7 @@ extension CmarkParser {
                 code.fenceChar = input.peek(at: firstNonspace)
                 code.fenceLength = (matched > 255) ? 255 : matched
                 code.fenceOffset = firstNonspace - offset
-                code.info = CmarkChunk(literal: "")
+                code.info = StringChunk(literal: "")
                 container.asType = .code(code)
                 advanceOffset(input: input,
                               count: firstNonspace + matched - offset,
@@ -1013,10 +1019,10 @@ extension CmarkParser {
                                      startColumn: offset + 1)
                 var code = container.asCode ?? CmarkCode()
                 code.fenced = false
-                code.fenceChar = 0
+                code.fenceChar = "\0"
                 code.fenceLength = 0
                 code.fenceOffset = 0
-                code.info = CmarkChunk(literal: "")
+                code.info = StringChunk(literal: "")
                 container.asType = .code(code)
                 
             } else {
@@ -1033,7 +1039,7 @@ extension CmarkParser {
         }
     }
     
-    func add(to _container: CmarkNode, lastMatchedContainer: CmarkNode?, text input: CmarkChunk) {
+    func add(to _container: CmarkNode, lastMatchedContainer: CmarkNode?, text input: StringChunk) {
         var container = _container
         // what remains at parser->offset is a text line.  add the text to the
         // appropriate container.
@@ -1140,24 +1146,16 @@ extension CmarkParser {
     }
     
     /* See http://spec.commonmark.org/0.24/#phase-1-block-structure */
-    func processLine(_ strbuf: CmarkStrbuf) {
-        processLine(strbuf.ptr, strbuf.size)
+    func processLine(_ strbuf: StringBufferType) {
+        processLine(strbuf.string, strbuf.startIndex, strbuf.endIndex)
     }
-    func processLine(_ buffer: UnsafePointer<UInt8>,
-                     _ _bytes: Int) {
-        var bytes = _bytes
+    func processLine(_ string: String, _ startIndex: String.Index, _ endIndex: String.Index) {
         var allMatched = true
         
-        if options.contains(.validateUTF8) {
-            curline.utf8procCheck(line: buffer, size: bytes)
-        } else {
-            curline.put(buffer, bytes)
-        }
-        
-        bytes = curline.size
+        curline.put(string, startIndex, endIndex)
         
         // ensure line ends with a newline:
-        if bytes == 0 || !curline.ptr[bytes - 1].isLineEnd {
+        if curline.isEmpty || !curline.last!.isLineEnd {
             curline.putc("\n")
         }
         
@@ -1166,8 +1164,8 @@ extension CmarkParser {
         blank = false
         partiallyConsumedTab = false
         
-        let input = CmarkChunk(content: curline)
-        
+        let input = StringChunk(content: curline)
+
         lineNumber += 1
         
         let lastMatchedContainer = checkOpenBlocks(input: input, allMatched: &allMatched)
@@ -1186,11 +1184,11 @@ extension CmarkParser {
         
         lastLineLength = input.len
         if lastLineLength != 0 &&
-            input.data[lastLineLength - 1] == "\n" {
+            input[lastLineLength - 1] == "\n" {
             lastLineLength -= 1
         }
         if lastLineLength != 0 &&
-            input.data[lastLineLength - 1] == "\r" {
+            input[lastLineLength - 1] == "\r" {
             lastLineLength -= 1
         }
         

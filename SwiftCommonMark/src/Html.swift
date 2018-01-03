@@ -16,36 +16,37 @@
 import Foundation
 
 // Functions to convert cmark_nodes to HTML strings.
-
-extension CmarkStrbuf {
-    fileprivate func escapeHtml(_ source: UnsafePointer<UInt8>,
-                                _ length: Int) {
-        escapeHtml0(source, length, false)
+extension StringBuffer {
+    ///lenth: valid length in UTF-8
+    fileprivate func escapeHtml(_ source: StringChunk, _ length: Int) {
+        let index = source.string.utf8.index(source.startIndex, offsetBy: length)
+        escapeHtml0(source.string, source.startIndex, index, false)
     }
-    fileprivate func escapeHtml(_ chunk: CmarkChunk) {
-        escapeHtml(chunk.data, chunk.len)
+    
+    fileprivate func escapeHtml(_ source: StringChunk) {
+        escapeHtml0(source.string, source.startIndex, source.endIndex, false)
     }
     
     fileprivate func cr() {
-        if size != 0 && ptr[size - 1] != "\n" {
+        if let lastChar = self.last, lastChar != "\n" {
             putc("\n")
         }
     }
 }
 
 private struct RenderState {
-    var html: CmarkStrbuf
+    var html: StringBuffer
     var plain: CmarkNode?
 }
 
 extension CmarkNode {
-    fileprivate func renderSourcepos(_ html: CmarkStrbuf,
+    fileprivate func renderSourcepos(_ html: StringBuffer,
                                      _ options: CmarkOptions) {
         if options.contains(.sourcepos) {
             html.puts(" data-sourcepos=\"\(startLine):\(startColumn)-\(endLine):\(endColumn)\"")
         }
     }
-    
+
     @discardableResult
     private func S_render_node(_ evType: CmarkEventType,
                                _ state: inout RenderState, _ options: CmarkOptions) -> Bool {
@@ -134,21 +135,21 @@ extension CmarkNode {
         case .codeBlock:
             html.cr()
             
-            if asCode?.info.len ?? 0 == 0 {
+            if asCode?.info.isEmpty ?? true {
                 html.puts("<pre")
                 renderSourcepos(html, options)
                 html.puts("><code>")
             } else {
                 var firstTag = 0
                 while firstTag < asCode?.info.len ?? 0 &&
-                    !asCode!.info.data[firstTag].isSpace {
+                    !asCode!.info[firstTag].isSpace {
                         firstTag += 1
                 }
                 
                 html.puts("<pre")
                 renderSourcepos(html, options)
                 html.puts("><code class=\"language-")
-                html.escapeHtml(asCode!.info.data, firstTag)
+                html.escapeHtml(asCode!.info, firstTag)
                 html.puts("\">")
             }
             
@@ -167,11 +168,9 @@ extension CmarkNode {
         case .customBlock:
             html.cr()
             if entering {
-                html.put(asCustom!.onEnter.data,
-                         asCustom!.onEnter.len)
+                html.put(asCustom!.onEnter)
             } else {
-                html.put(asCustom!.onExit.data,
-                         asCustom!.onExit.len)
+                html.put(asCustom!.onExit)
             }
             html.cr()
             
@@ -228,11 +227,9 @@ extension CmarkNode {
             
         case .customInline:
             if entering {
-                html.put(asCustom!.onEnter.data,
-                         asCustom!.onEnter.len)
+                html.put(asCustom!.onEnter)
             } else {
-                html.put(asCustom!.onExit.data,
-                         asCustom!.onExit.len)
+                html.put(asCustom!.onExit)
             }
             
         case .strong:
@@ -254,8 +251,7 @@ extension CmarkNode {
                 html.puts("<a href=\"")
                 if !(options.contains(.safe) &&
                     asLink!.url.scanDangerousUrl(0) != 0) {
-                    html.escapeHref(asLink!.url.data,
-                                    asLink!.url.len)
+                    html.escapeHref(asLink!.url)
                 }
                 if asLink!.title.len != 0 {
                     html.puts("\" title=\"")
@@ -271,15 +267,14 @@ extension CmarkNode {
                 html.puts("<img src=\"")
                 if !(options.contains(.safe) &&
                     asLink!.url.scanDangerousUrl(0) != 0) {
-                    html.escapeHref(asLink!.url.data,
-                                    asLink!.url.len)
+                    html.escapeHref(asLink!.url)
                 }
                 html.puts("\" alt=\"")
                 state.plain = self
             } else {
                 if asLink!.title.len != 0 {
                     html.puts("\" title=\"")
-                    html.escapeHtml(asLink!.title.data, asLink!.title.len)
+                    html.escapeHtml(asLink!.title)
                 }
                 
                 html.puts("\" />")
@@ -298,7 +293,7 @@ extension CmarkNode {
      * responsibility to free the returned buffer.
      */
     public func renderHtml(_ options: CmarkOptions) -> String {
-        let html = CmarkStrbuf()
+        let html = StringBuffer()
         var state = RenderState(html: html, plain: nil)
         let iter = CmarkIter(self)
         

@@ -27,6 +27,9 @@ extension UInt8 {
     //### Use `cmark_isdigit` or `isDigit` for locale-independent ctype functions.
     //#define _isdigit(c) ((c) >= '0' && (c) <= '9')
 }
+extension UnicodeScalar {
+    var isXDigit: Bool {return self.value <= UInt8.max && UInt8(self.value).isXDigit}
+}
 
 //### Not used
 //#define HOUDINI_ESCAPED_SIZE(x) (((x)*12) / 10)
@@ -58,66 +61,88 @@ func HOUDINI_UNESCAPED_SIZE(_ x: Int)-> Int {return x}
  *
  */
 private let HREF_SAFE: [Int8] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
+extension UnicodeScalar {
+    var hrefSafe: Bool {
+        return self.value <= 127 && HREF_SAFE[Int(self.value)] != 0
+    }
+    ///size in UTF-8
+    var size: Int {
+        return String(self).utf8.count
+    }
+}
 
-extension CmarkStrbuf {
+extension StringBuffer {
     @discardableResult
-    func escapeHref(_ src: UnsafePointer<UInt8>, _ size: Int) -> Bool {
-        var i = 0
+    func escapeHref(_ src: StringChunk) -> Bool {
+        let usv = src.string.unicodeScalars
+        let endIndex = src.endIndex
+        var i = src.startIndex
         
-        while i < size {
+        while i < endIndex {
             let org = i
-            while i < size && HREF_SAFE[Int(src[i])] != 0 {
-                i += 1
+            while i < endIndex && src[i].hrefSafe {
+                i = usv.index(after: i)
             }
             
             if likely(i > org) {
-                put(src + org, i - org)
+                put(src.string, org, i)
             }
             
             /* escaping */
-            if i >= size {
+            if i >= endIndex {
                 break
             }
             
-            switch src[i] {
-                /* amp appears all the time in URLs, but needs
-                 * HTML-entity escaping to be inside an href */
-            case "&":
-                puts("&amp;")
-                
-                /* the single quote is a valid URL character
-                 * according to the standard; it needs HTML
-                 * entity escaping too */
-            case "'":
-                puts("&#x27;")
-                
-                /* the space can be escaped to %20 or a plus
-                 * sign. we're going with the generic escape
-                 * for now. the plus thing is more commonly seen
-                 * when building GET strings */
-                //#if 0
-                //        case ' ':
-                //            cmark_strbuf_putc(ob, '+');
-                //            break;
-                //#endif
-                
-                /* every other character goes with a %XX escaping */
-            default:
-                puts(String(format: "%%%02X", src[i]))
+            for c in String(src[i]).utf8 {
+                if HREF_SAFE[Int(c)] != 0 {
+                    putc(c)
+                } else {
+                    switch src[i] {
+                        /* amp appears all the time in URLs, but needs
+                         * HTML-entity escaping to be inside an href */
+                    case "&":
+                        puts("&amp;")
+                        
+                        /* the single quote is a valid URL character
+                         * according to the standard; it needs HTML
+                         * entity escaping too */
+                    case "'":
+                        puts("&#x27;")
+                        
+                        /* the space can be escaped to %20 or a plus
+                         * sign. we're going with the generic escape
+                         * for now. the plus thing is more commonly seen
+                         * when building GET strings */
+                        //#if 0
+                        //        case ' ':
+                        //            cmark_strbuf_putc(ob, '+');
+                        //            break;
+                        //#endif
+                        
+                        /* every other character goes with a %XX escaping */
+                    default:
+                        puts(String(format: "%%%02X", c))
+                    }
+                }
             }
-            i += 1
+            i = usv.index(after: i)
         }
         
         return true
@@ -136,53 +161,62 @@ extension CmarkStrbuf {
  *
  */
 private let HTML_ESCAPE_TABLE: [Int] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 4,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 4,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 6, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 private let HTML_ESCAPES: [String] = ["",      "&quot;", "&amp;", "&#39;",
                                       "&#47;", "&lt;",   "&gt;"]
 
-extension CmarkStrbuf {
+extension StringBuffer {
     @discardableResult
-    func escapeHtml0(_ src: UnsafePointer<UInt8>, _ size: Int,
+    func escapeHtml0(_ string: String,
+                     _ startIndex: String.UnicodeScalarIndex,
+                     _ endIndex: String.UnicodeScalarIndex,
                      _ secure: Bool) -> Bool {
-        var i = 0, esc = 0
+        var i = startIndex
+        var esc = 0
+        let usv = string.unicodeScalars
         
-        while i < size {
+        while i < endIndex {
             let org = i
-            while i < size {
-                esc = HTML_ESCAPE_TABLE[Int(src[i])]
-                guard esc == 0 else {break}
-                i += 1
+            while i < endIndex {
+                esc = usv[i].value < 128 ? HTML_ESCAPE_TABLE[Int(usv[i].value)] : 0
+                if esc != 0 {break}
+                i = usv.index(after: i)
             }
             
             if i > org {
-                put(src + org, i - org)
+                put(string, org, i)
             }
             
             /* escaping */
-            if unlikely( i >= size) {
+            if unlikely(i >= endIndex) {
                 break
             }
             
             /* The forward slash is only escaped in secure mode */
-            if (src[i] == "/" || src[i] == "'") && !secure {
-                putc(src[i])
+            if (usv[i] == "/" || usv[i] == "'") && !secure {
+                put(usv[i])
             } else {
                 puts(HTML_ESCAPES[esc])
             }
             
-            i += 1
+            i = usv.index(after: i)
         }
         
         return true
@@ -196,104 +230,108 @@ extension CmarkStrbuf {
 
 /* Binary tree lookup code for entities added by JGM */
 
-private func S_lookup(_ i: Int, _ low: Int, _ hi: Int,
-                      _ s: UnsafePointer<UInt8>, _ len: Int) -> String? {
-    let cs = UnsafeRawPointer(s).assumingMemoryBound(to: CChar.self)
-    let cmp =
-        strncmp(cs, cmark_entities[i].name, len)
-    if cmp == 0 && cmark_entities[i].name.utf8.count == len {
+private func S_lookup<S:StringProtocol>(_ i: Int, _ low: Int, _ hi: Int,
+                      _ s: S) -> String? {
+    if s == cmark_entities[i].name {
         return cmark_entities[i].characters
-    } else if cmp <= 0 && i > low {
+    } else if s < cmark_entities[i].name && i > low {
         var j = i - ((i - low) / 2)
         if j == i {
             j -= 1
         }
-        return S_lookup(j, low, i - 1, s, len)
-    } else if cmp > 0 && i < hi {
+        return S_lookup(j, low, i - 1, s)
+    } else if s > cmark_entities[i].name && i < hi {
         var j = i + ((hi - i) / 2)
         if j == i {
             j += 1
         }
-        return S_lookup(j, i + 1, hi, s, len)
+        return S_lookup(j, i + 1, hi, s)
     } else {
         return nil
     }
 }
 
-private func S_lookup_entity(_ s: UnsafePointer<UInt8>, _ len: Int) -> String? {
-    return S_lookup(CMARK_NUM_ENTITIES / 2, 0, CMARK_NUM_ENTITIES - 1, s, len)
+private func S_lookup_entity<S:StringProtocol>(_ s: S) -> String? {
+    return S_lookup(CMARK_NUM_ENTITIES / 2, 0, CMARK_NUM_ENTITIES - 1, s)
 }
 
-extension CmarkStrbuf {
+extension StringBuffer {
+    ///returns: UTF-8 size of written entity
     @discardableResult
-    func unescapedEnt(_ src: UnsafePointer<UInt8>,
-                      _ _size: Int) -> Int {
-        var size = _size
-        var i = 0
+    func unescapedEnt(_ string: String, _ start: String.Index, _ _end: String.Index) -> Int {
+        var end = _end
+        var i = start
+        let usv = string.unicodeScalars
         
-        if size >= 3 && src[0] == "#" {
+        if usv.distance(from: start, to: end) >= 3 && usv[start] == "#" {
             var codepoint: Int32 = 0
             var numDigits = 0
-            
-            if src[1].isDigit {
-                i = 1
-                while i < size && src[i].isDigit {
-                    codepoint = codepoint * 10 + Int32(src[i] - "0")
+            let i1 = usv.index(after: start)
+            let i2 = usv.index(after: i1)
+
+            if usv[i1].isDigit {
+                i = i1
+                while i < end && usv[i].isDigit {
+                    codepoint = codepoint * 10 + Int32(usv[i].value) - "0"
                     
                     if codepoint >= 0x11_0000 {
                         // Keep counting digits but
                         // avoid integer overflow.
                         codepoint = 0x11_0000
                     }
-                    i += 1
+                    i = usv.index(after: i)
                 }
                 
-                numDigits = i - 1
+                numDigits = usv.distance(from: start, to: i) - 1
                 
-            } else if src[1] == "x" || src[1] == "X" {
-                i = 2
-                while i < size && src[i].isXDigit {
-                    codepoint = codepoint * 16 + Int32((src[i] | 32) % 39 - 9)
+            } else if usv[i1] == "x" || usv[i1] == "X" {
+                i = i2
+                while i < end && usv[i].isXDigit {
+                    codepoint = codepoint * 16 + Int32((usv[i].value | 32) % 39 - 9)
                     
                     if codepoint >= 0x11_0000 {
                         // Keep counting digits but
                         // avoid integer overflow.
                         codepoint = 0x11_0000
                     }
-                    i += 1
+                    i = usv.index(after: i)
                 }
                 
-                numDigits = i - 2
+                numDigits = usv.distance(from: start, to: i) - 2
             }
             
-            if numDigits >= 1 && numDigits <= 8 && i < size && src[i] == ";" {
+            if numDigits >= 1 && numDigits <= 8 && i < end && usv[i] == ";" {
                 if codepoint == 0 || (codepoint >= 0xD800 && codepoint < 0xE000) ||
                     codepoint >= 0x11_0000 {
                     codepoint = 0xFFFD
                 }
                 encodeChar(codepoint)
-                return i + 1
+                return string.utf8.distance(from: start, to: i) + 1
             }
             
         } else {
-            if size > CMARK_ENTITY_MAX_LENGTH {
-                size = CMARK_ENTITY_MAX_LENGTH
+            if usv.distance(from: start, to: end) > CMARK_ENTITY_MAX_LENGTH {
+                end = usv.index(start, offsetBy: CMARK_ENTITY_MAX_LENGTH)
             }
             
-            for i in CMARK_ENTITY_MIN_LENGTH..<size {
-                if src[i] == " " {
+            i = usv.index(start, offsetBy: CMARK_ENTITY_MIN_LENGTH)
+            while i < end {
+                if usv[i] == " " {
                     break
                 }
                 
-                if src[i] == ";" {
-                    if let entity = S_lookup_entity(src, i) {
+                if usv[i] == ";" {
+                    let entityName = String(string[start..<i])
+                    if let entity = S_lookup_entity(entityName) {
                         
                         self.puts(entity)
-                        return i + 1
+                        return string.utf8.distance(from: start, to: i) + 1
                     }
                     
                     break
                 }
+                
+                i = string.unicodeScalars.index(after: i)
             }
         }
         
@@ -301,37 +339,35 @@ extension CmarkStrbuf {
     }
     
     @discardableResult
-    func unescapeHtml(_ src: UnsafePointer<UInt8>,
-                      _ size: Int) -> Bool {
-        var i = 0
+    func unescapeHtml(_ string: String, _ start: String.Index, _ end: String.Index) -> Bool {
+        var i = start
+        let usv = string.unicodeScalars
         
-        while i < size {
+        while i < end {
             let org = i
-            while i < size && src[i] != "&" {
-                i += 1
+            while i < end && usv[i] != "&" {
+                i = usv.index(after: i)
             }
             
             if likely(i > org) {
-                if unlikely(org == 0) {
-                    if i >= size {
+                if unlikely(org == start) {
+                    if i >= end {
                         return false
                     }
-                    
-                    grow(to: HOUDINI_UNESCAPED_SIZE(size))
                 }
                 
-                put(src + org, i - org)
+                put(string, org, i)
             }
             
             /* escaping */
-            if i >= size {
+            if i >= end {
                 break
             }
             
-            i += 1
-            
-            let ent = unescapedEnt(src + i, size - 1)
-            i += ent
+            i = usv.index(after: i)
+
+            let ent = unescapedEnt(string, i, end)
+            i = string.utf8.index(i, offsetBy: ent)
             
             /* not really an entity */
             if ent == 0 {
@@ -342,14 +378,18 @@ extension CmarkStrbuf {
         return true
     }
     @discardableResult
-    public func unescapeHtml(_ chunk: CmarkChunk) -> Bool {
-        return unescapeHtml(chunk.data, chunk.len)
+    func unescapeHtml(_ chunk: StringBufferType) -> Bool {
+        return unescapeHtml(chunk.string, chunk.startIndex, chunk.endIndex)
     }
     
-    func unescapeHtmlF(_ src: UnsafePointer<UInt8>,
-                       _ size: Int) {
-        if !unescapeHtml(src, size) {
-            put(src, size)
+    func unescapeHtmlF(_ chunk: StringBufferType) {
+        if !unescapeHtml(chunk) {
+            put(chunk)
+        }
+    }
+    func unescapeHtmlF(_ string: String, _ start: String.Index, _ end: String.Index) {
+        if !unescapeHtml(string, start, end) {
+            put(string, start, end)
         }
     }
 }

@@ -22,16 +22,16 @@ public struct CmarkList {
     var padding: Int = 0
     var start: Int = 0
     var delimiter: CmarkDelimType = .noDelim
-    var bulletChar: UInt8 = 0
+    var bulletChar: UnicodeScalar = "\0"
     var tight: Bool = false
 }
 
 public struct CmarkCode {
-    var info: CmarkChunk = CmarkChunk()
-    var literal: CmarkChunk = CmarkChunk()
+    var info: StringChunk = StringChunk()
+    var literal: StringChunk = StringChunk()
     var fenceLength: Int = 0
     var fenceOffset: Int = 0
-    var fenceChar: UInt8 = 0
+    var fenceChar: UnicodeScalar = "\0"
     var fenced: Bool = false
 }
 
@@ -41,13 +41,13 @@ public struct CmarkHeading {
 }
 
 public struct CmarkLink {
-    var url: CmarkChunk = CmarkChunk()
-    var title: CmarkChunk = CmarkChunk()
+    var url: StringChunk = StringChunk()
+    var title: StringChunk = StringChunk()
 }
 
 public struct CmarkCustom {
-    var onEnter: CmarkChunk = CmarkChunk()
-    var onExit: CmarkChunk = CmarkChunk()
+    var onEnter: StringChunk = StringChunk()
+    var onExit: StringChunk = StringChunk()
 }
 
 struct CmarkNodeInternalFlags: OptionSet {
@@ -63,8 +63,8 @@ struct CmarkNodeInternalFlags: OptionSet {
 }
 
 public class CmarkNode {
-    let content: CmarkStrbuf
-    
+    let content: StringBuffer
+
     /** Returns the next node in the sequence after 'node', or NULL if
      * there is none.
      */
@@ -86,14 +86,6 @@ public class CmarkNode {
     /** Returns the last child of 'node', or NULL if 'node' has no children.
      */
     public internal(set) weak var lastChild: CmarkNode? = nil
-    
-    //### Do not use user_data, the property will be removed
-    /** Returns the user data of 'node'.
-     */
-    /** Sets arbitrary user data for 'node'.  Returns 1 on success,
-     * 0 on failure.
-     */
-    public var userData: UnsafeRawPointer? = nil
     
     public var userInfo: [String: Any] = [:]
     
@@ -123,7 +115,7 @@ public class CmarkNode {
     var asType: AsType
     
     enum AsType {
-        case literal(CmarkChunk)
+        case literal(StringChunk)
         case list(CmarkList)
         case code(CmarkCode)
         case heading(CmarkHeading)
@@ -146,7 +138,7 @@ public class CmarkNode {
             return nil
         }
     }
-    public var asLiteral: CmarkChunk? {
+    public var asLiteral: StringChunk? {
         if case .literal(let literal) = asType {
             return literal
         } else {
@@ -181,14 +173,14 @@ public class CmarkNode {
             return nil
         }
     }
-    
-    init(tag: CmarkNodeType, content: CmarkStrbuf, flags: CmarkNodeInternalFlags) {
+
+    init(tag: CmarkNodeType, content: StringBuffer, flags: CmarkNodeInternalFlags) {
         self.content = content
         type = tag
         self.flags = flags
         asType = AsType.htmlBlockType(0)
     }
-    
+
     deinit {
         nonRecursivelyFreeChildNodes()
     }
@@ -291,7 +283,7 @@ extension CmarkNode {
             asType = .heading(heading)
             
         case .list:
-            let list = CmarkList(listType: .bulletList, markerOffset: 0, padding: 0, start: 0, delimiter: .noDelim, bulletChar: 0, tight: false)
+            let list = CmarkList(listType: .bulletList, markerOffset: 0, padding: 0, start: 0, delimiter: .noDelim, bulletChar: "\0", tight: false)
             asType = .list(list)
             
         default:
@@ -511,12 +503,12 @@ extension CmarkNode {
         
         switch type {
         case .htmlBlock, .text, .htmlInline, .code:
-            asType = .literal(CmarkChunk(literal: content))
+            asType = .literal(StringChunk(literal: content))
             return true
             
         case .codeBlock:
             var code = asCode ?? CmarkCode()
-            code.literal = CmarkChunk(literal: content)
+            code.literal = StringChunk(literal: content)
             asType = .code(code)
             return true
             
@@ -1046,6 +1038,20 @@ extension CmarkNode {
         }
         
         return errors
+    }
+    
+    func dumpNodes(_ indent: String = "") {
+        print(indent, type, terminator: "")
+        if let literal = getLiteral() {
+            print(":", literal.debugDescription)
+        } else {
+            print()
+        }
+        var child = firstChild
+        while let theChild = child {
+            theChild.dumpNodes("    "+indent)
+            child = theChild.next
+        }
     }
 }
 

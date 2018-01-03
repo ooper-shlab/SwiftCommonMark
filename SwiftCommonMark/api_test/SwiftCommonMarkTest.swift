@@ -60,7 +60,7 @@ class SwiftCommonMarkTest: XCTestCase {
             node.free()
         }
     }
-    
+
     func testAccessors() {
         let markdown = """
             ## Header
@@ -256,7 +256,7 @@ class SwiftCommonMarkTest: XCTestCase {
         
         doc.free()
     }
-    
+
     func testNodeCheck() {
         // Construct an incomplete tree.
         let doc = CmarkNode(.document)
@@ -325,7 +325,7 @@ class SwiftCommonMarkTest: XCTestCase {
         iter.free()
         doc.free()
     }
-    
+
     func testCreateTree() {
         let doc = CmarkNode(type: .document)
         
@@ -399,7 +399,7 @@ class SwiftCommonMarkTest: XCTestCase {
         // after the parent block was destroyed. This doesn't work so far.
         emph.free()
     }
-    
+
     func testCustomNodes() {
         let doc = CmarkNode(type: .document)
         let p = CmarkNode(type: .paragraph)
@@ -429,7 +429,7 @@ class SwiftCommonMarkTest: XCTestCase {
         
         doc.free()
     }
-    
+
     func testHierarchy() {
         let bquote1 = CmarkNode(type: .blockQuote)
         let bquote2 = CmarkNode(type: .blockQuote)
@@ -481,7 +481,7 @@ class SwiftCommonMarkTest: XCTestCase {
         checkContent(.link, allInlines)
         checkContent(.image, allInlines)
     }
-    
+
     private func checkContent(_ type: CmarkNodeType,
                               _ allowedContent: UInt32) {
         let node = CmarkNode(type: type)
@@ -530,7 +530,7 @@ class SwiftCommonMarkTest: XCTestCase {
         
         doc.free()
     }
-    
+
     func testRenderXml() {
         
         let markdown = """
@@ -896,7 +896,7 @@ class SwiftCommonMarkTest: XCTestCase {
             """,
                        "input with raw HTML and dangerous links")
     }
-    
+
     private func checkMdToHtml(_ markdown: String,
                                _ expectedHtml: String, _ msg: String) {
         let html = cmark_markdown_to_html(markdown, .validateUTF8)
@@ -987,7 +987,7 @@ class SwiftCommonMarkTest: XCTestCase {
                        "sourcepos are as expected")
         doc.free()
     }
-    
+
     func testRefSourcePos() {
         let markdown = """
             Let's try [reference] links.
@@ -1019,7 +1019,7 @@ class SwiftCommonMarkTest: XCTestCase {
     func testSpec() {
         let testBundle = Bundle(for: type(of: self))
         let specPath = testBundle.path(forResource: "spec", ofType: "txt")
-        let st = SpecTests(spec: specPath!, normalize: false/*, number: 575*/)
+        let st = SpecTests(spec: specPath!, normalize: false/*, number: 309*/)
         let result = st.run()
         XCTAssert(result.fail + result.error == 0, "SpecTests")
     }
@@ -1051,7 +1051,7 @@ class SwiftCommonMarkTest: XCTestCase {
     func testSmartPunct() {
         let testBundle = Bundle(for: type(of: self))
         let specPath = testBundle.path(forResource: "smart_punct", ofType: "txt")
-        let st = SpecTests(spec: specPath!, normalize: false, options: .smart)
+        let st = SpecTests(spec: specPath!, normalize: false, options: .smart/*, number: 1*/)
         let result = st.run()
         XCTAssert(result.fail + result.error == 0, "SmartPunct")
     }
@@ -1077,7 +1077,8 @@ class SwiftCommonMarkTest: XCTestCase {
         let (_, failed, errored) = et.run()
         XCTAssert(failed + errored == 0, "EntityTests")
     }
-    
+
+    /*
     func testPathological() {
         //### Some test cases take minitues to hours in the current implementation, better avoid...
         let pt = PathologicalTests(verbose: true, exclude: [/*"many references", "unclosed links A", "backticks"*/])
@@ -1091,7 +1092,7 @@ class SwiftCommonMarkTest: XCTestCase {
             // Put the code you want to measure the time of here.
         }
     }
-    
+    */
 }
 
 //Unicode REPLACEMENT CHARACTER

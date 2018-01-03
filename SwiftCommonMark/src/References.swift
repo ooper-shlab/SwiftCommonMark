@@ -13,46 +13,21 @@
 
 import Foundation
 
-let REFMAP_SIZE = 16
+//let REFMAP_SIZE = 16
 
 class CmarkReference {
-    var next: CmarkReference?
-    var label: UnsafeMutablePointer<UInt8>?
-    var labelSize: Int = 0
-    var url: CmarkChunk?
-    var title: CmarkChunk?
-    var hash: UInt32 = 0
-    
-    deinit {
-        if labelSize > 0 {
-            label?.deinitialize(count: labelSize)
-            label?.deallocate(capacity: labelSize)
-        }
-    }
+    var label: String?
+    var url: StringChunk?
+    var title: StringChunk?
 }
 
 class CmarkReferenceMap {
-    var table: [CmarkReference?] = (0..<REFMAP_SIZE).map{_ in CmarkReference()}
-}
-
-private func refhash(_ _linkRef: UnsafePointer<UInt8>) -> UInt32 {
-    var linkRef = _linkRef
-    var hash: UInt32 = 0
-    
-    while linkRef.pointee != 0 {
-        hash = UInt32(linkRef.pointee) &+ (hash &<< 6) &+ (hash &<< 16) &- hash
-        linkRef += 1
-    }
-    
-    return hash
+    var dict: [String: CmarkReference] = [:]
 }
 
 extension CmarkReference {
     func free() {
-        label?.deinitialize(count: labelSize)
-        label?.deallocate(capacity: labelSize)
         label = nil
-        labelSize = 0
         url?.free()
         title?.free()
     }
@@ -64,64 +39,53 @@ private func strcmp(_ str1: UnsafePointer<UInt8>, _ str2: UnsafePointer<UInt8>) 
     return strcmp(ptr1, ptr2)
 }
 
-extension CmarkChunk {
+extension StringChunk {
     // normalize reference:  collapse internal whitespace to single space,
     // remove leading/trailing whitespace, case fold
     // Return NULL if the reference name is actually empty (i.e. composed
     // solely from whitespace)
-    fileprivate func normalizeReference() -> (UnsafePointer<UInt8>?, Int) {
-        let normalized = CmarkStrbuf()
+    fileprivate func normalizeReference() -> String? {
+        let normalized = StringBuffer()
         
-        if len == 0 {
-            return (nil, 0)
+        if isEmpty {
+            return nil
         }
         
-        normalized.caseFold(data, len)
+        normalized.caseFold(self)
         normalized.trim()
         normalized.normalizeWhitespace()
         
-        let (result, asize) = normalized.detachPtr()
+        let result = normalized.detach()
         
-        if result[0] == "\0" {
-            return (nil, asize)
+        if result.isEmpty {
+            return nil
         }
         
-        return (UnsafePointer(result), asize)
+        return result
     }
 }
 
 extension CmarkReferenceMap {
     fileprivate func add(_ ref: CmarkReference) {
-        var t = table[Int(ref.hash) % REFMAP_SIZE]
-        ref.next = t
-        
-        while let theRef = t {
-            if theRef.hash == ref.hash && strcmp(theRef.label!, ref.label!) == 0 {
-                ref.free()
-                return
-            }
-            
-            t = theRef.next
+        if dict[ref.label!] != nil {
+            ref.free()
+            return
         }
-        
-        table[Int(ref.hash) % REFMAP_SIZE] = ref
+        dict[ref.label!] = ref
     }
     
-    func create(label: CmarkChunk,
-                url: CmarkChunk, title: CmarkChunk) {
-        guard case let (label, asize) = label.normalizeReference(), let reflabel = label else {
+    func create(label: StringChunk,
+                url: StringChunk, title: StringChunk) {
+        guard let reflabel = label.normalizeReference() else {
             
             /* empty reference name, or composed from only whitespace */
             return
         }
         
         let ref = CmarkReference()
-        ref.label = UnsafeMutablePointer(mutating: reflabel)
-        ref.labelSize = asize
-        ref.hash = refhash(reflabel)
+        ref.label = reflabel
         ref.url = url.cleanUrl()
         ref.title = title.cleanTitle()
-        ref.next = nil
         
         add(ref)
     }
@@ -129,47 +93,22 @@ extension CmarkReferenceMap {
     // Returns reference if refmap contains a reference with matching
     // label, otherwise NULL.
     func lookup(
-        _ label: CmarkChunk) -> CmarkReference? {
-        var ref: CmarkReference? = nil
+        _ label: StringChunk) -> CmarkReference? {
         
         if label.len < 1 || label.len > MAX_LINK_LABEL_LENGTH {
             return nil
         }
         
-        guard case let (n, aSize) = label.normalizeReference(), let norm = n else {
+        guard let norm = label.normalizeReference() else {
             return nil
         }
-        defer {
-            if aSize > 0 {
-                UnsafeMutablePointer(mutating: norm).deinitialize(count: aSize)
-                UnsafeMutablePointer(mutating: norm).deallocate(capacity: aSize)
-            }
-        }
         
-        let hash = refhash(norm)
-        ref = table[Int(hash) % REFMAP_SIZE]
-        
-        while let theRef = ref {
-            if theRef.hash == hash && strcmp(theRef.label!, norm) == 0 {
-                break
-            }
-            ref = theRef.next
-        }
-        
-        return ref
+        return dict[norm]
     }
     
     func free() {
         
-        for i in 0..<REFMAP_SIZE {
-            var ref = table[i]
-            
-            while ref != nil {
-                let next = ref!.next
-                ref!.free()
-                ref = next
-            }
-        }
+        dict = [:]
         
     }
     

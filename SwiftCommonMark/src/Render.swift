@@ -28,8 +28,8 @@ enum CmarkEscaping {
 }
 
 class CmarkRenderer {
-    let buffer: CmarkStrbuf
-    let prefix: CmarkStrbuf
+    let buffer: StringBuffer
+    let prefix: StringBuffer
     var column: Int
     let width: Int
     var needCr: Int = 0
@@ -43,7 +43,7 @@ class CmarkRenderer {
     let blankline: (CmarkRenderer)->Void
     let out: (CmarkRenderer, UnsafePointer<CChar>, Bool, CmarkEscaping)->Void
     
-    init(_ buffer: CmarkStrbuf, _ prefix: CmarkStrbuf, _ column: Int, _ width: Int, _ needCr: Int,
+    init(_ buffer: StringBuffer, _ prefix: StringBuffer, _ column: Int, _ width: Int, _ needCr: Int,
          _ lastBreakable: Int, _ beginLine: Bool, _ beginContent: Bool, _ noLinebreaks: Bool,
          _ inTightListItem: Bool,
          _ outc: @escaping (CmarkRenderer, CmarkEscaping, Int32, UInt8)->Void,
@@ -84,7 +84,7 @@ private func S_out(_ renderer: CmarkRenderer, _ source: UnsafePointer<CChar>, _ 
                    _ escape: CmarkEscaping) {
     let length = strlen(source)
     var i = 0;
-    let remainder = CmarkChunk(literal: "")
+    let remainder = StringChunk(literal: "")
     var k = renderer.buffer.size - 1
     
     let wrap = _wrap && !renderer.noLinebreaks
@@ -93,7 +93,7 @@ private func S_out(_ renderer: CmarkRenderer, _ source: UnsafePointer<CChar>, _ 
         renderer.needCr = 1
     }
     while renderer.needCr > 0 {
-        if k < 0 || renderer.buffer.ptr[k] == "\n" {
+        if k < 0 || renderer.buffer[k] == "\n" {
             k -= 1
         } else {
             renderer.buffer.putc("\n")
@@ -166,8 +166,7 @@ private func S_out(_ renderer: CmarkRenderer, _ source: UnsafePointer<CChar>, _ 
             !renderer.beginLine && renderer.lastBreakable > 0 {
             
             // copy from last_breakable to remainder
-            let ptr = UnsafeRawPointer(renderer.buffer.ptr).assumingMemoryBound(to: CChar.self)
-            remainder.setCstr(ptr + renderer.lastBreakable + 1)
+            remainder.setCstr(renderer.buffer, renderer.lastBreakable + 1)
             // truncate at last_breakable
             renderer.buffer.truncate(renderer.lastBreakable)
             // add newline, prefix, and remainder
@@ -187,7 +186,7 @@ private func S_out(_ renderer: CmarkRenderer, _ source: UnsafePointer<CChar>, _ 
 
 extension CmarkRenderer {
     // Assumes no newlines, assumes ascii content:
-    func renderAscii(_ s: UnsafePointer<CChar>) {
+    func renderAscii(_ s: String) {
         let origsize = buffer.size
         buffer.puts(s)
         column += buffer.size - origsize
@@ -203,8 +202,8 @@ extension CmarkNode {
     func render(_ options: CmarkOptions, _ width: Int,
                 _ outc: @escaping (CmarkRenderer, CmarkEscaping, Int32, UInt8)->Void,
                 _ renderNode: (CmarkRenderer, CmarkNode, CmarkEventType, CmarkOptions)->Int) -> String {
-        let pref = CmarkStrbuf()
-        let buf = CmarkStrbuf()
+        let pref = StringBuffer()
+        let buf = StringBuffer()
         let iter = CmarkIter(self)
         
         let renderer = CmarkRenderer(buf, pref, 0, width,
@@ -222,7 +221,7 @@ extension CmarkNode {
         }
         
         // ensure final newline
-        if renderer.buffer.ptr[renderer.buffer.size - 1] != "\n" {
+        if let lastChar = renderer.buffer.last, lastChar != "\n" {
             renderer.buffer.putc("\n")
         }
         

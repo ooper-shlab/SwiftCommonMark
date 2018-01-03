@@ -20,7 +20,7 @@ private func outc(_ renderer: CmarkRenderer, _ escape: CmarkEscaping,
                   _ c: Int32, _ nextc: UInt8) {
     let followsDigit =
         renderer.buffer.size > 0 &&
-            renderer.buffer.ptr[renderer.buffer.size - 1].isDigit
+            renderer.buffer.last!.isDigit
     
     let needsEscaping =
         c < 0x80 && escape != .literal &&
@@ -55,13 +55,12 @@ private func outc(_ renderer: CmarkRenderer, _ escape: CmarkEscaping,
     }
 }
 
-private func longest_backtick_sequence(_ code: UnsafePointer<CChar>) -> Int {
+private func longest_backtick_sequence(_ code: StringBufferType) -> Int {
     var longest = 0
     var current = 0
-    var i = 0
-    let codeLen = strlen(code)
-    while i <= codeLen {
-        if code[i] == CChar("`" as UInt8) {
+    var index = code.startIndex
+    while index <= code.endIndex {
+        if code[index] == "`" {
             current += 1
         } else {
             if current > longest {
@@ -69,20 +68,22 @@ private func longest_backtick_sequence(_ code: UnsafePointer<CChar>) -> Int {
             }
             current = 0
         }
-        i += 1
+        if index == code.endIndex {
+            break
+        }
+        index = code.string.unicodeScalars.index(after: index)
     }
     return longest
 }
 
-private func shortest_unused_backtick_sequence(_ code: UnsafePointer<CChar>) -> Int {
+private func shortest_unused_backtick_sequence(_ code: StringBufferType) -> Int {
     // note: if the shortest sequence is >= 32, this returns 32
     // so as not to overflow the bit array.
     var used: UInt32 = 1
     var current = 0
-    var i = 0
-    let codeLen = strlen(code)
-    while i <= codeLen {
-        if code[i] == CChar("`" as UInt8) {
+    var index = code.startIndex
+    while index <= code.endIndex {
+        if code[index] == "`" {
             current += 1
         } else {
             if current > 0 && current < 32 {
@@ -90,10 +91,13 @@ private func shortest_unused_backtick_sequence(_ code: UnsafePointer<CChar>) -> 
             }
             current = 0
         }
-        i += 1
+        if index == code.endIndex {
+            break
+        }
+        index = code.string.unicodeScalars.index(after: index)
     }
     // return number of first bit that is 0:
-    i = 0
+    var i = 0
     while i < 32 && (used & 1) != 0 {
         used >>= 1
         i += 1
@@ -109,13 +113,13 @@ extension CmarkNode {
         }
         
         let url = asLink!.url
-        if url.len == 0 || url.scanScheme(0) == 0 {
+        if url.isEmpty || url.scanScheme(0) == 0 {
             return false
         }
         
         let title = asLink!.title
         // if it has a title, we can't treat it as an autolink:
-        if title.len > 0 {
+        if !title.isEmpty {
             return false
         }
         
@@ -253,16 +257,13 @@ private func S_render_node(_ renderer: CmarkRenderer, _ node: CmarkNode,
             BLANKLINE()
         }
         let info = node.getFenceInfo()!
-        let infoLen = info.utf8.count
-        let codeData = node.asCode!.literal.data
-        let code = UnsafeRawPointer(codeData).assumingMemoryBound(to: CChar.self)
-        let codeLen = strlen(code)
+        let code = node.asCode!.literal
         // use indented form if no info, and code doesn't
         // begin or end with a blank line, and code isn't
         // first thing in a list item
-        if infoLen == 0 && (codeLen > 2 && !codeData[0].isSpace &&
-            !(codeData[codeLen - 1].isSpace &&
-                codeData[codeLen - 2].isSpace)) &&
+        if info.isEmpty && (code.len > 2 && !code.first!.isSpace &&
+            !(code.last!.isSpace &&
+                code[code.len - 2].isSpace)) &&
             !firstInListItem {
             LIT("    ")
             renderer.prefix.puts("    ")
@@ -330,18 +331,16 @@ private func S_render_node(_ renderer: CmarkRenderer, _ node: CmarkNode,
         }
         
     case .code:
-        let codeData = node.asLiteral!.data
-        let code = UnsafeRawPointer(codeData).assumingMemoryBound(to: CChar.self)
-        let codeLen = strlen(code)
+        let code = node.asLiteral!
         let numticks = shortest_unused_backtick_sequence(code)
         for _ in 0..<numticks {
             LIT("`")
         }
-        if codeLen == 0 || codeData[0] == "`" {
+        if code.isEmpty || code.first == "`" {
             LIT(" ")
         }
         OUT(node.getLiteral()!, allowWrap, .literal)
-        if codeLen == 0 || codeData[codeLen - 1] == "`" {
+        if code.isEmpty || code.last == "`" {
             LIT(" ")
         }
         for _ in 0..<numticks {

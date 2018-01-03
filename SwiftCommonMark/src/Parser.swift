@@ -51,9 +51,9 @@ public class CmarkParser {
     var indent: Int = 0
     var blank: Bool = false
     var partiallyConsumedTab: Bool = false
-    let curline: CmarkStrbuf = CmarkStrbuf(initialSize: 256)
+    let curline: StringBuffer = StringBuffer(capacity: 256)
     var lastLineLength: Int = 0
-    let linebuf: CmarkStrbuf = CmarkStrbuf(initialSize: 0)
+    let linebuf: StringBuffer = StringBuffer(capacity: 0)
     let options: CmarkOptions
     var lastBufferEndedWithCr: Bool = false
     

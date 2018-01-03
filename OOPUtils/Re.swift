@@ -84,33 +84,51 @@ class Re {
         return self
     }
 }
-class ReEnv {
+public class ReEnv {
     var string: String
-    var current: Int
+    var startIndex: String.UnicodeScalarIndex
+    var endIndex: String.UnicodeScalarIndex
+
+    ///Represent UTF-16 offset from startIndex to next position to match
+    public var current: Int
+    
     var matches: [Substring?] = []
     init(_ ptr: UnsafePointer<UInt8>) {
         self.string = String(cString: ptr)
+        self.startIndex = string.startIndex
+        self.endIndex = string.endIndex
         current = 0
     }
     init(string: String) {
         self.string = string
+        self.startIndex = string.startIndex
+        self.endIndex = string.endIndex
         current = 0
     }
-    
+    public init(_ string: String, _ startIndex: String.UnicodeScalarIndex, _ endIndex: String.UnicodeScalarIndex) {
+        self.string = string
+        self.startIndex = startIndex
+        self.endIndex = endIndex
+        current = 0
+    }
+
+    ///Returns UTF-8 count from pos to current
+    ///pos needs to be some value taken from current
     func size(from pos: Int) -> Int {
         if pos > current {
             return -1
         } else {
-            let startIndex = string.index(string.startIndex, offsetBy: pos)
-            let endIndex = string.index(startIndex, offsetBy: current-pos)
-            return string[startIndex..<endIndex].utf8.count
+            let startIndex = string.utf16.index(self.startIndex, offsetBy: pos)
+            let endIndex = string.utf16.index(startIndex, offsetBy: current-pos)
+            return string.utf8.distance(from: startIndex, to: endIndex)
         }
     }
 }
 
 func ~= (re: Re, env: ReEnv) -> Bool {
     let regex = re.regex
-    let range = NSRange(env.current..<env.string.utf16.count)
+    let start = env.string.utf16.index(env.startIndex, offsetBy: env.current)
+    let range = NSRange(start..., in: env.string)
     if let firstMatch = regex.firstMatch(in: env.string, options: .anchored, range: range) {
         env.current += firstMatch.range.length
         env.matches = (0..<firstMatch.numberOfRanges).map{index in

@@ -13,18 +13,18 @@
 
 import Foundation
 
-extension CmarkChunk {
+extension StringChunk {
     public func scanScheme(_ n: Int) -> Int {
         return scan(_scan_scheme, at: n)
     }
-    func scanAutolinkUri(_ n: Int) -> Int {
-        return scan(_scan_autolink_uri, at: n)
+    func scanAutolinkUri(_ index: String.Index) -> Int {
+        return scan(_scan_autolink_uri, at: index)
     }
-    func scanAutolinkEmail(_ n: Int) -> Int {
-        return scan(_scan_autolink_email, at: n)
+    func scanAutolinkEmail(_ index: String.Index) -> Int {
+        return scan(_scan_autolink_email, at: index)
     }
-    func scanHtmlTag(_ n: Int) -> Int {
-        return scan(_scan_html_tag, at: n)
+    func scanHtmlTag(_ index: String.Index) -> Int {
+        return scan(_scan_html_tag, at: index)
     }
     func scanHtmlBlockStart(_ n: Int) -> Int {
         return scan(_scan_html_block_start, at: n)
@@ -47,9 +47,12 @@ extension CmarkChunk {
     func scanHtmlBlockEnd5(_ n: Int) -> Int {
         return scan(_scan_html_block_end_5, at: n)
     }
-    func scanLinkTitle(_ n: Int) -> Int {return scan(_scan_link_title, at: n)}
-    func scanSpacechars(_ n: Int) -> Int {
-        return scan(_scan_spacechars, at: n)
+    func scanLinkTitle(_ index: String.Index) -> Int {
+        return scan(_scan_link_title, at: index)
+    }
+    func scanSpacechars(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_spacechars, at: start)
     }
     func scanAtxHeadingStart(_ n: Int) -> Int {
         return scan(_scan_atx_heading_start, at: n)
@@ -73,17 +76,25 @@ extension CmarkChunk {
     }
 }
 
-extension CmarkChunk {
+extension StringChunk {
+    ///### offset: valid UTF-8 offset
     func scan(_ scanner: (ReEnv)->Int, at offset: Int) -> Int {
         
-        if offset > len {
+        let index = string.utf8.index(startIndex, offsetBy: offset)
+        if index > endIndex {
             return 0
         } else {
             
-            let env = ReEnv(data + offset)
+            let env = ReEnv(string, index, endIndex)
             return scanner(env)
         }
         
+    }
+    func scan(_ scanner: (ReEnv)->Int, at index: String.Index) -> Int {
+        
+        let env = ReEnv(string, index, endIndex)
+        return scanner(env)
+
     }
 }
 

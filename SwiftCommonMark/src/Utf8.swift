@@ -26,10 +26,9 @@ private let utf8proc_utf8class: [Int8] = [
     2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
     4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0]
 
-private extension CmarkStrbuf {
-    func encodeUnknown() {
-        let repl: [UInt8] = [239, 191, 189]
-        self.put(repl, 3)
+extension StringBuffer {
+    fileprivate func encodeUnknown() {
+        self.put("\u{FFFD}")
     }
 }
 
@@ -127,8 +126,8 @@ func utf8proc_valid(_ str: UnsafePointer<UInt8>, _ strLen: Int) -> Int {
     return length
 }
 
-extension CmarkStrbuf {
-    func utf8procCheck(line: UnsafePointer<UInt8>, size: Int) {
+extension StringBuffer {
+    func utf8procCheck(_ line: UnsafePointer<UInt8>, _ size: Int) {
         var i = 0
         
         while i < size {
@@ -213,65 +212,27 @@ func cmark_utf8proc_iterate(_ str: UnsafePointer<UInt8>, _ strLen: Int, _ dst: i
     return length
 }
 
-extension CmarkStrbuf {
-    func encodeChar(_ uc: Int32) {
-        var dst: [UInt8] = .init(repeating: 0, count: 4)
-        var len = 0
-        
-        assert(uc >= 0)
-        
-        if uc < 0x80 {
-            dst[0] = UInt8(uc)
-            len = 1
-        } else if uc < 0x800 {
-            dst[0] = UInt8(0xC0 + (uc >> 6))
-            dst[1] = 0x80 + UInt8(uc & 0x3F)
-            len = 2
-        } else if uc == 0xFFFF {
-            dst[0] = 0xFF
-            len = 1
-        } else if uc == 0xFFFE {
-            dst[0] = 0xFE
-            len = 1
-        } else if uc < 0x1_0000 {
-            dst[0] = UInt8(0xE0 + (uc >> 12))
-            dst[1] = 0x80 + UInt8((uc >> 6) & 0x3F)
-            dst[2] = 0x80 + UInt8(uc & 0x3F)
-            len = 3
-        } else if uc < 0x11_0000 {
-            dst[0] = UInt8(0xF0 + (uc >> 18))
-            dst[1] = 0x80 + UInt8((uc >> 12) & 0x3F)
-            dst[2] = 0x80 + UInt8((uc >> 6) & 0x3F)
-            dst[3] = 0x80 + UInt8(uc & 0x3F)
-            len = 4
-        } else {
-            encodeUnknown()
-            return
+extension StringBuffer {
+    func encodeChar(_ ch: Int32) {
+        if endIndex < string.endIndex {
+            string.removeSubrange(endIndex...)
         }
-        
-        put(dst, len)
+        self.string.append(String(UnicodeScalar(UInt32(ch))!))
+        self.endIndex = string.endIndex
     }
     
-    func caseFold(_ _str: UnsafePointer<UInt8>,
-                  _ _len: Int) {
-        var str = _str
-        var len = _len
+    func caseFold(_ buf: StringBufferType) {
+        var index = buf.startIndex
+        var endIndex = buf.endIndex
+        var usv = buf.string.unicodeScalars
         var c: Int32 = 0
         
         func bufpush(_ x: Int32) {encodeChar(x)}
         
-        while len > 0 {
-            var charLen = cmark_utf8proc_iterate(str, len, &c)
+        while index < endIndex {
+            caseFoldSwitch(Int32(usv[index].value), bufpush: bufpush)
             
-            if charLen >= 0 {
-                caseFoldSwitch(c, bufpush: bufpush)
-            } else {
-                encodeUnknown()
-                charLen = -charLen
-            }
-            
-            str += charLen
-            len -= charLen
+            index = usv.index(after: index)
         }
     }
 }
@@ -281,6 +242,10 @@ func cmark_utf8proc_is_space(_ uc: Int32) -> Bool {
     return (uc == 9 || uc == 10 || uc == 12 || uc == 13 || uc == 32 ||
         uc == 160 || uc == 5760 || (uc >= 8192 && uc <= 8202) || uc == 8239 ||
         uc == 8287 || uc == 12288)
+}
+func cmark_utf8proc_is_space(_ us: UnicodeScalar) -> Bool {
+    let uc = Int32(us.value)
+    return cmark_utf8proc_is_space(uc)
 }
 
 // matches anything in the P[cdefios] classes.
@@ -345,4 +310,8 @@ func cmark_utf8proc_is_punctuation(_ uc: Int32) -> Bool {
             (uc >= 74864 && uc <= 74868) || uc == 92782 || uc == 92783 ||
             uc == 92917 || (uc >= 92983 && uc <= 92987) || uc == 92996 ||
             uc == 113823)
+}
+func cmark_utf8proc_is_punctuation(_ us: UnicodeScalar) -> Bool {
+    let uc = Int32(us.value)
+    return cmark_utf8proc_is_punctuation(uc)
 }

@@ -17,21 +17,17 @@ import Foundation
 
 // Functions to convert cmark_nodes to XML strings.
 
-extension CmarkStrbuf {
-    fileprivate func escapeXml(_ source: UnsafePointer<UInt8>,
-                               _ length: Int) {
-        escapeHtml0(source, length, false)
-    }
-    fileprivate func escapeXml(_ chunk: CmarkChunk) {
-        escapeXml(chunk.data, chunk.len)
+extension StringBuffer {
+    fileprivate func escapeXml(_ chunk: StringChunk) {
+        escapeHtml0(chunk.string, chunk.startIndex, chunk.endIndex, false)
     }
 }
 
 fileprivate class RenderState {
-    let xml: CmarkStrbuf
+    let xml: StringBuffer
     var _indent: Int = 0
     
-    init(xml: CmarkStrbuf, indent: Int) {
+    init(xml: StringBuffer, indent: Int) {
         self.xml = xml
         self._indent = indent
         
@@ -147,7 +143,7 @@ extension CmarkNode {
      * to free the returned buffer.
      */
     public func renderXml(_ options: CmarkOptions) -> String {
-        let xml = CmarkStrbuf()
+        let xml = StringBuffer()
         let state = RenderState(xml: xml, indent: 0)
         
         let iter = CmarkIter(self)

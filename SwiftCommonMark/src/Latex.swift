@@ -129,8 +129,8 @@ extension CmarkNode {
         }
         
         let url = getUrl()!
-        let urlChunk = CmarkChunk(literal: url)
-        
+        let urlChunk = StringChunk(literal: url)
+
         if url.first == "#" {
             return .internalLink
         }
