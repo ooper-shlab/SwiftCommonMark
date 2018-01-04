@@ -82,11 +82,9 @@ class PathologicalTests {
             (("[" * 50000) + "a" + ("]" * 50000),
              try! NSRegularExpression(pattern: "\\[{50000}a\\]{50000}"))
         
-        //### may take 40 sec (Release, non-dubuggable)
-        //### does not finish in Debug build (or taking extra orinary time...)
         pathological["nested block quotes"] =
             ((("> " * 50000) + "a"),
-             try! NSRegularExpression(pattern: "(<blockquote>\n){50000}"))
+             try! NSRegularExpression(pattern: "(<blockquote>\n){\(50000)}"))
         
         pathological["U+0000 in input"] =
             ("abc\u{0000}de\u{0000}",
@@ -107,7 +105,7 @@ class PathologicalTests {
             ("[a](b" * 50000,
              try! NSRegularExpression(pattern: "(\\[a\\]\\(b){50000}"))
         
-        //### may take 3 minutes (Release, non-dubuggable)
+        //### may take 2 minutes (Release, non-dubuggable)
         //### Consumes 3GB of memory, 15 minutes (Debug build)
         let n = 50000, m = 16
         //### 300MB, 1 minute (Debug build)

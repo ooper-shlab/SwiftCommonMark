@@ -44,9 +44,9 @@ public class CmarkParser {
     let root: CmarkNode
     var current: CmarkNode?
     var lineNumber: Int = 0
-    var offset: Int = 0
+    var parseIndex: String.Index
     var column: Int = 0
-    var firstNonspace: Int = 0
+    var firstNonspaceIndex: String.Index
     var firstNonspaceColumn: Int = 0
     var indent: Int = 0
     var blank: Bool = false
@@ -63,6 +63,9 @@ public class CmarkParser {
         self.root = root
         self.current = root
         self.options = options
+        //
+        parseIndex = curline.startIndex
+        firstNonspaceIndex = curline.startIndex
     }
 }
 

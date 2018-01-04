@@ -1080,7 +1080,7 @@ class SwiftCommonMarkTest: XCTestCase {
 
     func testPathological() {
         //### Some test cases take minitues in the current implementation, better avoid...
-        let pt = PathologicalTests(verbose: true, exclude: ["nested block quotes"/*, "many references", "backticks"*/])
+        let pt = PathologicalTests(verbose: true/*, exclude: ["many references", "backticks"]*/)
         let result = pt.run()
         XCTAssert(result.failed + result.errored == 0, "PathologicalTests")
     }

@@ -19,7 +19,7 @@ let pathodologicalTestName: [String: String] = [
     "link-emph": "link openers and emph closers",
     "hard-link-emph": "hard link/emph case",
     "nested-brackets": "nested brackets",
-    "nested-block-quites": "nested block quotes",
+    "nested-block-quotes": "nested block quotes",
     "u-0000-input": "U+0000 in input",
     "backticks": "backticks",
     "unclosed-a": "unclosed links A",

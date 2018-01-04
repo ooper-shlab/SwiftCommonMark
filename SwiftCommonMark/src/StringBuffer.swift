@@ -117,19 +117,16 @@ extension StringBufferType {
         }
     }
 
-    ///### offset: valid offset in UTF-8
-    ///### returns: found offset in UTF-8
-    func strchr(_ c: UInt8, _ offset: Int) -> Int? {
+    func strchr(_ c: UInt8, _ from: String.Index) -> String.Index? {
         if
-            let fromIndex = string.utf8.index(startIndex, offsetBy: offset, limitedBy: endIndex),
-            let foundIndex = string.utf8[fromIndex...].index(of: c)
+            let foundIndex = string.utf8[from...].index(of: c)
         {
-            return distance(from: fromIndex, to: foundIndex) + offset
+            return foundIndex
         } else {
             return nil
         }
     }
-    
+
     func index(after index: String.Index) -> String.Index {
         return string.unicodeScalars.index(after: index)
     }
@@ -234,13 +231,14 @@ extension StringBuffer {
         self.string += buf.string[buf.startIndex..<buf.endIndex]
         endIndex = string.endIndex
     }
-    
-    func put(_ buf: StringBufferType, _ offset: Int) {
+
+    ///### startIndex: valid index in buf.string (may exceed buf.endIndex)
+    func put(_ buf: StringBufferType, _ startIndex: String.Index) {
         if endIndex < string.endIndex {
             string.removeSubrange(endIndex...)
         }
-        if let start = buf.string.utf8.index(buf.startIndex, offsetBy: offset, limitedBy: buf.endIndex) {
-            self.string += buf.string[start..<buf.endIndex]
+        if startIndex <= buf.endIndex {
+            self.string += buf.string[startIndex..<buf.endIndex]
         }
         endIndex = string.endIndex
     }

@@ -26,26 +26,33 @@ extension StringChunk {
     func scanHtmlTag(_ index: String.Index) -> Int {
         return scan(_scan_html_tag, at: index)
     }
-    func scanHtmlBlockStart(_ n: Int) -> Int {
-        return scan(_scan_html_block_start, at: n)
+    func scanHtmlBlockStart(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_html_block_start, at: start)
     }
-    func scanHtmlBlockStart7(_ n: Int) -> Int {
-        return scan(_scan_html_block_start_7, at: n)
+    func scanHtmlBlockStart7(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_html_block_start_7, at: start)
     }
-    func scanHtmlBlockEnd1(_ n: Int) -> Int {
-        return scan(_scan_html_block_end_1, at: n)
+    func scanHtmlBlockEnd1(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_html_block_end_1, at: start)
     }
-    func scanHtmlBlockEnd2(_ n: Int) -> Int {
-        return scan(_scan_html_block_end_2, at: n)
+    func scanHtmlBlockEnd2(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_html_block_end_2, at: start)
     }
-    func scanHtmlBlockEnd3(_ n: Int) -> Int {
-        return scan(_scan_html_block_end_3, at: n)
+    func scanHtmlBlockEnd3(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_html_block_end_3, at: start)
     }
-    func scanHtmlBlockEnd4(_ n: Int) -> Int {
-        return scan(_scan_html_block_end_4, at: n)
+    func scanHtmlBlockEnd4(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_html_block_end_4, at: start)
     }
-    func scanHtmlBlockEnd5(_ n: Int) -> Int {
-        return scan(_scan_html_block_end_5, at: n)
+    func scanHtmlBlockEnd5(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_html_block_end_5, at: start)
     }
     func scanLinkTitle(_ index: String.Index) -> Int {
         return scan(_scan_link_title, at: index)
@@ -54,20 +61,25 @@ extension StringChunk {
         let start = string.utf8.index(index, offsetBy: offset)
         return scan(_scan_spacechars, at: start)
     }
-    func scanAtxHeadingStart(_ n: Int) -> Int {
-        return scan(_scan_atx_heading_start, at: n)
+    func scanAtxHeadingStart(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_atx_heading_start, at: start)
     }
-    func scanSetextHeadingLine(_ n: Int) -> Int {
-        return scan(_scan_setext_heading_line, at: n)
+    func scanSetextHeadingLine(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_setext_heading_line, at: start)
     }
-    func scanThematicBreak(_ n: Int) -> Int {
-        return scan(_scan_thematic_break, at: n)
+    func scanThematicBreak(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_thematic_break, at: start)
     }
-    func scanOpenCodeFence(_ n: Int) -> Int {
-        return scan(_scan_open_code_fence, at: n)
+    func scanOpenCodeFence(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_open_code_fence, at: start)
     }
-    func scanCloseCodeFence(_ n: Int) -> Int {
-        return scan(_scan_close_code_fence, at: n)
+    func scanCloseCodeFence(_ index: String.Index, _ offset: Int = 0) -> Int {
+        let start = string.utf8.index(index, offsetBy: offset)
+        return scan(_scan_close_code_fence, at: start)
     }
     //### Not used
     //#define scan_entity(c, n) _scan_at(&_scan_entity, c, n)
@@ -133,8 +145,8 @@ let declaration = "!" & Re("[A-Z]+") & spacechar+ & Re("[^>\\x00]*") & ">"
 
 let cdata = "![CDATA[" & (Re("[^\\]\\x00]+") | "]" & Re("[^\\]\\x00]") | "]]" & Re("[^>\\x00]"))* & "]]>"
 
-let htmltag = opentag | closetag | htmlcomment | processinginstruction |
-    declaration | cdata
+let htmltag = (opentag | closetag | htmlcomment | processinginstruction |
+    declaration | cdata).compile()
 
 let in_parens_nosp   = "(" & (reg_char|escaped_char|"\\")* & ")"
 
@@ -145,10 +157,11 @@ let in_parens        = "(" & (escaped_char|Re("[^)\\x00]"))* & ")"
 let scheme           = Re("[A-Za-z][A-Za-z0-9.+-]{1,31}")
 
 // Try to match a scheme including colon.
+private let schemeIncludingColon = (scheme & ":").compile()
 private func _scan_scheme(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case scheme & ":":
+    case schemeIncludingColon:
         return p.size(from: start)
     default:
         return 0
@@ -156,10 +169,11 @@ private func _scan_scheme(_ p: ReEnv) -> Int {
 }
 
 // Try to match URI autolink after first <, returning number of chars matched.
+private let autolink_uri = (scheme & Re(":[^\\x00-\\x20<>]*>")).compile()
 private func _scan_autolink_uri(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case scheme & Re(":[^\\x00-\\x20<>]*>"):
+    case autolink_uri:
         return p.size(from: start)
     default:
         return 0
@@ -167,14 +181,17 @@ private func _scan_autolink_uri(_ p: ReEnv) -> Int {
 }
 
 // Try to match email autolink after first <, returning num of chars matched.
+private let autolink_email = (
+    Re("[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+")
+    & "@"
+    & Re("[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?")
+    & Re("([.][a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*")
+    & ">"
+).compile()
 private func _scan_autolink_email(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+")
-        & "@"
-        & Re("[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?")
-        & Re("([.][a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*")
-        & ">":
+    case autolink_email:
         return p.size(from: start)
     default:
         return 0
@@ -195,19 +212,25 @@ private func _scan_html_tag(_ p: ReEnv) -> Int {
 // Try to match an HTML block tag start line, returning
 // an integer code for the type of block (1-6, matching the spec).
 // #7 is handled by a separate function, below.
-func _scan_html_block_start(_ p: ReEnv) -> Int {
+private let html_block_start1 = ("<" & ["script", "pre", "style"].i & (spacechar | ">")).compile()
+private let html_block_start2 = ("<!--".i).compile()
+private let html_block_start3 = ("<?".i).compile()
+private let html_block_start4 = ("<!" & Re("[A-Z]")).compile()
+private let html_block_start5 = ("<![CDATA[".i).compile()
+private let html_block_start6 = ("<" & "/".opt & blocktagname & (spacechar | "/".opt & ">")).compile()
+private func _scan_html_block_start(_ p: ReEnv) -> Int {
     switch p {
-    case "<" & ["script", "pre", "style"].i & (spacechar | ">"):
+    case html_block_start1:
         return 1
-    case "<!--".i:
+    case html_block_start2:
         return 2
-    case "<?".i:
+    case html_block_start3:
         return 3
-    case "<!" & Re("[A-Z]"):
+    case html_block_start4:
         return 4
-    case "<![CDATA[".i:
+    case html_block_start5:
         return 5
-    case "<" & "/".opt & blocktagname & (spacechar | "/".opt & ">"):
+    case html_block_start6:
         return 6
     default:
         return 0
@@ -216,9 +239,10 @@ func _scan_html_block_start(_ p: ReEnv) -> Int {
 
 // Try to match an HTML block tag start line of type 7, returning
 // 7 if successful, 0 if not.
+private let html_block_start_7 = ("<" & (opentag | closetag) & Re("[\\t\\n\\f ]*[\\r\\n]")).compile()
 private func _scan_html_block_start_7(_ p: ReEnv) -> Int {
     switch p {
-    case "<" & (opentag | closetag) & Re("[\\t\\n\\f ]*[\\r\\n]"):
+    case html_block_start_7:
         return 7
     default:
         return 0
@@ -226,10 +250,11 @@ private func _scan_html_block_start_7(_ p: ReEnv) -> Int {
 }
 
 // Try to match an HTML block end line of type 1
+private let html_block_end_1 = (Re("[^\\n\\x00]*</") & ["script","pre","style"].i & ">").compile()
 private func _scan_html_block_end_1(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("[^\\n\\x00]*</") & ["script","pre","style"].i & ">":
+    case html_block_end_1:
         return p.size(from: start)
     default:
         return 0
@@ -237,10 +262,11 @@ private func _scan_html_block_end_1(_ p: ReEnv) -> Int {
 }
 
 // Try to match an HTML block end line of type 2
+private let html_block_end_2 = Re("[^\\n\\x00]*-->").compile()
 private func _scan_html_block_end_2(_ p: ReEnv) -> Int {
     let start = p.current
     switch  p {
-    case Re("[^\\n\\x00]*-->"):
+    case html_block_end_2:
         return p.size(from: start)
     default:
         return 0
@@ -248,10 +274,11 @@ private func _scan_html_block_end_2(_ p: ReEnv) -> Int {
 }
 
 // Try to match an HTML block end line of type 3
+private let html_block_end_3 = (Re("[^\\n\\x00]*") & "?>").compile()
 private func _scan_html_block_end_3(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("[^\\n\\x00]*") & "?>":
+    case html_block_end_3:
         return p.size(from: start)
     default:
         return 0
@@ -259,10 +286,11 @@ private func _scan_html_block_end_3(_ p: ReEnv) -> Int {
 }
 
 // Try to match an HTML block end line of type 4
+private let html_block_end_4 = Re("[^\\n\\x00]*>").compile()
 private func _scan_html_block_end_4(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("[^\\n\\x00]*>"):
+    case html_block_end_4:
         return p.size(from: start)
     default:
         return 0
@@ -270,10 +298,11 @@ private func _scan_html_block_end_4(_ p: ReEnv) -> Int {
 }
 
 // Try to match an HTML block end line of type 5
+private let html_block_end_5 = (Re("[^\\n\\x00]*")&"]]>").compile()
 private func _scan_html_block_end_5(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("[^\\n\\x00]*")&"]]>":
+    case html_block_end_5:
         return p.size(from: start)
     default:
         return 0
@@ -301,10 +330,11 @@ private func _scan_link_title(_ p: ReEnv) -> Int {
 }
 
 // Match space characters, including newlines.
+private let spacechars = Re("[ \\t\\v\\f\\r\\n]+").compile()
 private func _scan_spacechars(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("[ \\t\\v\\f\\r\\n]+"):
+    case spacechars:
         return p.size(from: start)
     default:
         return 0
@@ -312,10 +342,11 @@ private func _scan_spacechars(_ p: ReEnv) -> Int {
 }
 
 // Match ATX heading start.
+private let atx_heading_start = Re("#{1,6}(?:[ \\t]+|[\\r\\n])").compile()
 private func _scan_atx_heading_start(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("#{1,6}(?:[ \\t]+|[\\r\\n])"):
+    case atx_heading_start:
         return p.size(from: start)
     default:
         return 0
@@ -324,11 +355,13 @@ private func _scan_atx_heading_start(_ p: ReEnv) -> Int {
 
 // Match setext heading line.  Return 1 for level-1 heading,
 // 2 for level-2, 0 for no match.
+private let setext_heading_line1 = Re("=+[ \t]*[\r\n]").compile()
+private let setext_heading_line2 = Re("-+[ \t]*[\r\n]").compile()
 private func _scan_setext_heading_line(_ p: ReEnv) -> Int {
     switch p {
-    case Re("=+[ \t]*[\r\n]"):
+    case setext_heading_line1:
         return 1
-    case Re("-+[ \t]*[\r\n]"):
+    case setext_heading_line2:
         return 2
     default:
         return 0
@@ -338,14 +371,17 @@ private func _scan_setext_heading_line(_ p: ReEnv) -> Int {
 // Scan a thematic break line: "...three or more hyphens, asterisks,
 // or underscores on a line by themselves. If you wish, you may use
 // spaces between the hyphens or asterisks."
+private let thematic_break1 = Re("(\\*[ \\t]*){3,}[ \\t]*[\\r\\n]").compile()
+private let thematic_break2 = Re("(_[ \\t]*){3,}[ \\t]*[\\r\\n]").compile()
+private let thematic_break3 = Re("(\\-[ \\t]*){3,}[ \\t]*[\\r\\n]").compile()
 private func _scan_thematic_break(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("(\\*[ \\t]*){3,}[ \\t]*[\\r\\n]"):
+    case thematic_break1:
         return p.size(from: start)
-    case Re("(_[ \\t]*){3,}[ \\t]*[\\r\\n]"):
+    case thematic_break2:
         return p.size(from: start)
-    case Re("(\\-[ \\t]*){3,}[ \\t]*[\\r\\n]"):
+    case thematic_break3:
         return p.size(from: start)
     default:
         return 0
@@ -353,12 +389,14 @@ private func _scan_thematic_break(_ p: ReEnv) -> Int {
 }
 
 // Scan an opening code fence.
+private let open_code_fence1 = (Re("`{3,}")/Re("[^`\\r\\n\\x00]*[\\r\\n]")).compile()
+private let open_code_fence2 = (Re("~{3,}")/Re("[^~\\r\\n\\x00]*[\\r\\n]")).compile()
 private func _scan_open_code_fence(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("`{3,}")/Re("[^`\\r\\n\\x00]*[\\r\\n]"):
+    case open_code_fence1:
         return p.size(from: start)
-    case Re("~{3,}")/Re("[^~\\r\\n\\x00]*[\\r\\n]"):
+    case open_code_fence2:
         return p.size(from: start)
     default:
         return 0
@@ -366,12 +404,14 @@ private func _scan_open_code_fence(_ p: ReEnv) -> Int {
 }
 
 // Scan a closing code fence with length at least len.
+private let close_code_fence1 = (Re("`{3,}")/Re("[ \t]*[\r\n]")).compile()
+private let close_code_fence2 = (Re("~{3,}")/Re("[ \t]*[\r\n]")).compile()
 private func _scan_close_code_fence(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case Re("`{3,}")/Re("[ \t]*[\r\n]"):
+    case close_code_fence1:
         return p.size(from: start)
-    case Re("~{3,}")/Re("[ \t]*[\r\n]"):
+    case close_code_fence2:
         return p.size(from: start)
     default:
         return 0
@@ -394,12 +434,14 @@ private func _scan_close_code_fence(_ p: ReEnv) -> Int {
 
 // Returns positive value if a URL begins in a way that is potentially
 // dangerous, with javascript:, vbscript:, file:, or data:, otherwise 0.
+private let dangerous_url1 = ("data:image/".i & ["png", "gif", "jpeg", "webp"].i).compile()
+private let dangerous_url2 = (["javascript:", "vbscript:", "file:", "data:"].i).compile()
 private func _scan_dangerous_url(_ p: ReEnv) -> Int {
     let start = p.current
     switch p {
-    case "data:image/".i & ["png", "gif", "jpeg", "webp"].i:
+    case dangerous_url1:
         return 0
-    case ["javascript:", "vbscript:", "file:", "data:"].i:
+    case dangerous_url2:
         return p.size(from: start)
     default:
         return 0
