@@ -5,6 +5,10 @@
 //  Translated by OOPer in cooperation with shlab.jp, on 2018/1/1.
 //  Copyright © 2018 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
+/*
+ Based on pathological_tests.py
+ https://github.com/commonmark/cmark/blob/master/test/pathological_tests.py
+ */
 
 import Foundation
 
@@ -19,22 +23,25 @@ class PathologicalTests {
     let prog: String?
     let verbose: Bool
     let exclude: Set<String>
+    let name: String?
     let cmark: CMark
     let allowedFailures: Set<String>
     var pathological: [String: (String, NSRegularExpression)] = [:]
     //let whitespaceRe: NSRegularExpression
     let results: Results
     
-    init(prog: String? = nil, verbose: Bool = false, allowed: Set<String> = ["many references"], exclude: Set<String> = []) {
+    init(prog: String? = nil, verbose: Bool = false, allowed: Set<String> = ["many references"], exclude: Set<String> = [], name: String? = nil) {
         self.prog = prog
         self.verbose = verbose
         self.exclude = exclude
+        self.name = name
         self.allowedFailures = allowed
         
         cmark = CMark(prog: prog)
         
         //# list of pairs consisting of input and a regex that must match the output.
         //    # note - some pythons have limit of 65535 for {num-matches} in re.
+        
         pathological["nested strong emph"] =
             (("*a **a " * 65000) + "b" + (" a** a*" * 65000),
              try! NSRegularExpression(pattern: "(<em>a <strong>a ){65000}b( a</strong> a</em>){65000}"))
@@ -75,6 +82,8 @@ class PathologicalTests {
             (("[" * 50000) + "a" + ("]" * 50000),
              try! NSRegularExpression(pattern: "\\[{50000}a\\]{50000}"))
         
+        //### may take 40 sec (Release, non-dubuggable)
+        //### does not finish in Debug build (or taking extra orinary time...)
         pathological["nested block quotes"] =
             ((("> " * 50000) + "a"),
              try! NSRegularExpression(pattern: "(<blockquote>\n){50000}"))
@@ -83,12 +92,13 @@ class PathologicalTests {
             ("abc\u{0000}de\u{0000}",
              try! NSRegularExpression(pattern: "abc\u{fffd}?de\u{fffd}?"))
         
-        //### may take 10 minutes...
+        //### may take 40 sec (Release, non-dubuggable)
+        //### may take 5 minutes (Debug build)
         pathological["backticks"] =
             ("".join((1...10000).map{x in ("e" + "`" * x)}),
              try! NSRegularExpression(pattern: "^<p>[e`]*</p>\n$"))
         
-        //### may take 20 minutes...
+        //### may take half a minute (Debug build)
         pathological["unclosed links A"] =
             ("[a](<b" * 50000,
              try! NSRegularExpression(pattern: "(\\[a\\]\\(&lt;b){50000}"))
@@ -97,10 +107,11 @@ class PathologicalTests {
             ("[a](b" * 50000,
              try! NSRegularExpression(pattern: "(\\[a\\]\\(b){50000}"))
         
-        //### Consumes 2.5GB of memory and could not find when to finish...
-        //let n = 50000, m = 16
-        //### 50MB, 1 minute
-        let n = 10000, m = 1
+        //### may take 3 minutes (Release, non-dubuggable)
+        //### Consumes 3GB of memory, 15 minutes (Debug build)
+        let n = 50000, m = 16
+        //### 300MB, 1 minute (Debug build)
+        //let n = 50000, m = 1
         pathological["many references"] =
             ((1...n*m).lazy.map{x in ("[\(x)]: u\n")}.joined(separator: "") + "[0] " * n,
              try! NSRegularExpression(pattern: "(\\[0\\] ){\(n-1)}"))
@@ -111,17 +122,19 @@ class PathologicalTests {
     }
     
     private func run_pathological_test(description: String, results: Results) {
-        if exclude.contains(description) {
-            if verbose {print(description, "[EXCLUDED]")}
-            results.ignored.append(description)
+        if name != nil && description != name! {
             return
         }
-        if verbose {print(description, "[TESTING]")}
+        if exclude.contains(description) {
+            if verbose {print(description, "[EXCLUDED]")}
+            return
+        }
+        if verbose {print(description, "[TESTING]", Date())}
         let (inp, regex) = pathological[description]!
         let (rc, actual, err) = cmark.toHtml(inp)
         //    extra = ""
         if rc != 0 {
-            if verbose {print(description, "[ERRORED (return code \(rc))]")}
+            if verbose {print(description, "[ERRORED (return code \(rc))]", Date())}
             if verbose {print(err)}
             if allowedFailures.contains(description) {
                 results.ignored.append(description)
@@ -129,10 +142,10 @@ class PathologicalTests {
                 results.errored.append(description)
             }
         } else if regex.search(actual) != nil {
-            if verbose {print(description, "[PASSED]")}
+            if verbose {print(description, "[PASSED]", Date())}
             results.passed.append(description)
         } else {
-            if verbose {print(description, "[FAILED]")}
+            if verbose {print(description, "[FAILED]", Date())}
             if verbose {debugPrint(actual)}
             if allowedFailures.contains(description) {
                 results.ignored.append(description)
@@ -143,9 +156,10 @@ class PathologicalTests {
     }
     
     func run() -> (passed: Int, failed: Int, errored: Int, ignored: Int) {
-        print("Testing pathological cases:")
+        print("Testing pathological cases:", Date())
         for description in pathological.keys {
             //### Currently our Swift version of cmark is thread-unsafe...
+            //### And 4 seconds seems to be too short for our Swift version.
             run_pathological_test(description: description, results: results)
             //    p = multiprocessing.Process(target=run_pathological_test,
             //              args=(description, results,))
@@ -171,14 +185,16 @@ class PathologicalTests {
         print("\(passed) passed, \(failed) failed, \(errored) errored", terminator: "")
         if ignored > 0 {
             if verbose {
-                print()
+                print("", Date())
                 print("Ignoring these allowed failures:")
                 for x in results.ignored {
                     print(x)
                 }
             } else {
-                print(" \(ignored) ignored")
+                print(" \(ignored) ignored", Date())
             }
+        } else {
+            print("", Date())
         }
         return (passed, failed, errored, ignored)
     }

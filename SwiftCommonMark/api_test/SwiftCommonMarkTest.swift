@@ -1078,14 +1078,14 @@ class SwiftCommonMarkTest: XCTestCase {
         XCTAssert(failed + errored == 0, "EntityTests")
     }
 
-    /*
     func testPathological() {
-        //### Some test cases take minitues to hours in the current implementation, better avoid...
-        let pt = PathologicalTests(verbose: true, exclude: [/*"many references", "unclosed links A", "backticks"*/])
+        //### Some test cases take minitues in the current implementation, better avoid...
+        let pt = PathologicalTests(verbose: true, exclude: ["nested block quotes"/*, "many references", "backticks"*/])
         let result = pt.run()
         XCTAssert(result.failed + result.errored == 0, "PathologicalTests")
     }
 
+    /*
     func testPerformanceExample() {
         // This is an example of a performance test case.
         self.measure {

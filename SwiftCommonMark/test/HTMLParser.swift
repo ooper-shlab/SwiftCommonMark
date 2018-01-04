@@ -2,7 +2,7 @@
 //  HTMLParser.swift
 //  HtmlNormalizer
 //
-//  Translated by OOPer in cooperation with shlab.jp, on 2017/12/31.
+//  Created by OOPer in cooperation with shlab.jp, on 2017/12/31.
 //  Copyright © 2017-2018 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 

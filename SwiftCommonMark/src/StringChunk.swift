@@ -28,15 +28,15 @@ public class StringChunk: StringBufferType {
     }
 
     init(_ string: String, _ startIndex: String.Index, _ endIndex: String.Index) {
-        self.string = string
-        self.startIndex = startIndex
-        self.endIndex = endIndex
+        self.string = String(string[startIndex..<endIndex])
+        self.startIndex = self.string.startIndex
+        self.endIndex = self.string.endIndex
     }
     
     func initialize(_ string: String, _ startIndex: String.Index, _ endIndex: String.Index) {
-        self.string = string
-        self.startIndex = startIndex
-        self.endIndex = endIndex
+        self.string = String(string[startIndex..<endIndex])
+        self.startIndex = self.string.startIndex
+        self.endIndex = self.string.endIndex
     }
     
     init() {
@@ -52,13 +52,13 @@ public class StringChunk: StringBufferType {
     }
     
     ///offset: valid offset in UTF-8
-    func setCstr(_ buf: StringBufferType, _ offset: Int = 0) {
+    func set(_ buf: StringBufferType, offset: Int = 0) {
         let start = buf.string.utf8.index(buf.startIndex, offsetBy: offset)
-        self.string = buf.string
-        self.startIndex = start
-        self.endIndex = buf.endIndex
+        self.string = String(buf.string[start...])
+        self.startIndex = self.string.startIndex
+        self.endIndex = self.string.endIndex
     }
-    public func setCstr(_ string: String) {
+    public func set(_ string: String) {
         self.string = string
         startIndex = string.startIndex
         endIndex = string.endIndex

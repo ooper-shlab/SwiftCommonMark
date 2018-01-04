@@ -4,6 +4,18 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>Profiler.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>Profiling.xcscheme</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+			<key>orderHint</key>
+			<integer>0</integer>
+		</dict>
 		<key>Re2Swift.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -17,12 +29,35 @@
 		<key>SwiftCommonMark.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>2</integer>
+		</dict>
+		<key>SwiftCommonMarkProfiling.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
 		</dict>
 		<key>SwiftCommonMarkTest.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>1</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>D7064D661FFDC6B4004288A5</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>D796294D1FE563A10086130D</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>D7C6B5EF1FE6A712000C1411</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>

@@ -166,7 +166,7 @@ private func S_out(_ renderer: CmarkRenderer, _ source: UnsafePointer<CChar>, _ 
             !renderer.beginLine && renderer.lastBreakable > 0 {
             
             // copy from last_breakable to remainder
-            remainder.setCstr(renderer.buffer, renderer.lastBreakable + 1)
+            remainder.set(renderer.buffer, offset: renderer.lastBreakable + 1)
             // truncate at last_breakable
             renderer.buffer.truncate(renderer.lastBreakable)
             // add newline, prefix, and remainder

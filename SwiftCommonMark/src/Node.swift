@@ -345,71 +345,6 @@ extension CmarkNode {
     }
     
     /**
-     * ## Accessors
-     */
-    
-    //### Use `type` property
-    //cmark_node_type cmark_node_get_type(cmark_node *node) {
-    //  if (node == NULL) {
-    //    return CMARK_NODE_NONE;
-    //  } else {
-    //    return (cmark_node_type)node->type;
-    //  }
-    //}
-    
-    /** Like 'cmark_node_get_type', but returns a string representation
-     of the type, or `"<unknown>"`.
-     */
-    func getTypeString() -> String {
-        
-        switch type {
-        case .none:
-            return "none"
-        case .document:
-            return "document"
-        case .blockQuote:
-            return "block_quote"
-        case .list:
-            return "list"
-        case .item:
-            return "item"
-        case .codeBlock:
-            return "code_block"
-        case .htmlBlock:
-            return "html_block"
-        case .customBlock:
-            return "custom_block"
-        case .paragraph:
-            return "paragraph"
-        case .heading:
-            return "heading"
-        case .thematicBreak:
-            return "thematic_break"
-        case .text:
-            return "text"
-        case .softbreak:
-            return "softbreak"
-        case .linebreak:
-            return "linebreak"
-        case .code:
-            return "code"
-        case .htmlInline:
-            return "html_inline"
-        case .customInline:
-            return "custom_inline"
-        case .emph:
-            return "emph"
-        case .strong:
-            return "strong"
-        case .link:
-            return "link"
-        case .image:
-            return "image"
-        }
-        
-    }
-    
-    /**
      * ## Tree Traversal
      */
     
@@ -474,6 +409,71 @@ extension CmarkNode {
     //  node->user_data = user_data;
     //  return 1;
     //}
+
+    /**
+     * ## Accessors
+     */
+    
+    //### Use `type` property
+    //cmark_node_type cmark_node_get_type(cmark_node *node) {
+    //  if (node == NULL) {
+    //    return CMARK_NODE_NONE;
+    //  } else {
+    //    return (cmark_node_type)node->type;
+    //  }
+    //}
+    
+    /** Like 'cmark_node_get_type', but returns a string representation
+     of the type, or `"<unknown>"`.
+     */
+    func getTypeString() -> String {
+        
+        switch type {
+        case .none:
+            return "none"
+        case .document:
+            return "document"
+        case .blockQuote:
+            return "block_quote"
+        case .list:
+            return "list"
+        case .item:
+            return "item"
+        case .codeBlock:
+            return "code_block"
+        case .htmlBlock:
+            return "html_block"
+        case .customBlock:
+            return "custom_block"
+        case .paragraph:
+            return "paragraph"
+        case .heading:
+            return "heading"
+        case .thematicBreak:
+            return "thematic_break"
+        case .text:
+            return "text"
+        case .softbreak:
+            return "softbreak"
+        case .linebreak:
+            return "linebreak"
+        case .code:
+            return "code"
+        case .htmlInline:
+            return "html_inline"
+        case .customInline:
+            return "custom_inline"
+        case .emph:
+            return "emph"
+        case .strong:
+            return "strong"
+        case .link:
+            return "link"
+        case .image:
+            return "image"
+        }
+        
+    }
     
     /** Returns the string contents of 'node', or an empty
      string if none is set.  Returns NULL if called on a
@@ -657,7 +657,7 @@ extension CmarkNode {
         
         if type == .codeBlock {
             let code = asCode ?? CmarkCode()
-            code.info.setCstr(info)
+            code.info.set(info)
             asType = .code(code)
             return true
         } else {
@@ -682,7 +682,7 @@ extension CmarkNode {
         switch type {
         case .link, .image:
             let link = asLink ?? CmarkLink()
-            link.url.setCstr(url)
+            link.url.set(url)
             asType = .link(link)
             return true
         default:
@@ -709,7 +709,7 @@ extension CmarkNode {
         switch type {
         case .link, .image:
             let link = asLink ?? CmarkLink()
-            link.title.setCstr(title)
+            link.title.set(title)
             asType = .link(link)
             return true
         default:
@@ -738,7 +738,7 @@ extension CmarkNode {
         switch type {
         case .customInline, .customBlock:
             let custom = asCustom ?? CmarkCustom()
-            custom.onEnter.setCstr(onEnter)
+            custom.onEnter.set(onEnter)
             asType = .custom(custom)
             return true
         default:
@@ -767,7 +767,7 @@ extension CmarkNode {
         switch type {
         case .customInline, .customBlock:
             let custom = asCustom ?? CmarkCustom()
-            custom.onExit.setCstr(onExit)
+            custom.onExit.set(onExit)
             asType = .custom(custom)
             return true
         default:
@@ -958,7 +958,7 @@ extension CmarkNode {
      * Returns 1 on success, 0 on failure.
      */
     @discardableResult
-    func append(child: CmarkNode) -> Bool {
+    public func append(child: CmarkNode) -> Bool {
         if !self.canContain(child) {
             return false
         }
@@ -989,7 +989,7 @@ extension CmarkNode {
         fputs("Invalid '\(getTypeString())' in node type %s at \(startLine):\(startColumn)", out)
     }
     
-    func check(_ out: UnsafeMutablePointer<FILE>!) -> Int {
+    public func check(_ out: UnsafeMutablePointer<FILE>!) -> Int {
         var errors = 0
         
         var cur: CmarkNode? = self
@@ -1040,7 +1040,8 @@ extension CmarkNode {
         return errors
     }
     
-    func dumpNodes(_ indent: String = "") {
+    //### For debugging
+    public func dumpNodes(_ indent: String = "") {
         print(indent, type, terminator: "")
         if let literal = getLiteral() {
             print(":", literal.debugDescription)

@@ -17,9 +17,9 @@ import Foundation
 
 // Functions to convert cmark_nodes to HTML strings.
 extension StringBuffer {
-    ///lenth: valid length in UTF-8
+    ///### lenth: valid length in UTF-8
     fileprivate func escapeHtml(_ source: StringChunk, _ length: Int) {
-        let index = source.string.utf8.index(source.startIndex, offsetBy: length)
+        let index = source.index(source.startIndex, offsetBy: length)
         escapeHtml0(source.string, source.startIndex, index, false)
     }
     

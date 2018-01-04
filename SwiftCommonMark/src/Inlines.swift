@@ -63,16 +63,20 @@ class Bracket {
     var previous: Bracket?
     var previousDelimiter: Delimiter?
     var inlText: CmarkNode?
-    var position: Int = 0
+    var index: String.Index
     var image: Bool = false
     var active: Bool = false
     var bracketAfter: Bool = false
+    
+    init(index: String.Index) {
+        self.index = index
+    }
 }
 
 class Subject {
     var input: StringChunk
     var line: Int = 0
-    var index: String.Index
+    var curIndex: String.Index
     var blockOffset: Int = 0
     var columnOffset: Int = 0
     var refmap: CmarkReferenceMap?
@@ -83,7 +87,7 @@ class Subject {
     
     init(input: StringChunk, refmap: CmarkReferenceMap?) {
         self.input = input
-        self.index = input.startIndex
+        self.curIndex = input.startIndex
         self.refmap = refmap
     }
 }
@@ -111,8 +115,9 @@ extension Subject {
     private func makeLiteral(_ t: CmarkNodeType,
                              _ startIndex: String.Index, _ endIndex: String.Index,
         _ s: StringChunk) -> CmarkNode {
-        let startColumn = self.input.string.distance(from: input.string.startIndex, to: startIndex)
-        let endColumn = self.input.distance(from: startIndex, to: endIndex) + startColumn
+        //###TODO: This consumes CPU time in huge lines...
+        let startColumn = self.distance(from: input.startIndex, to: startIndex)
+        let endColumn = self.distance(from: startIndex, to: endIndex) + startColumn
         return makeLiteral(t, startColumn, endColumn, s)
     }
 }
@@ -188,15 +193,16 @@ extension Subject {
     fileprivate func makeAutolink(
         _ startIndex: String.Index, _ endIndex: String.Index,
         _ url: StringChunk, _ isEmail: Bool) -> CmarkNode {
-        let startColumn = self.input.string.utf8.distance(from: self.input.startIndex, to: startIndex)
-        let endColumn = startColumn + self.input.string.utf8.distance(from: startIndex, to: endIndex)
+        //###TODO: This consumes CPU time in huge lines...
+        let startColumn = self.distance(from: self.input.startIndex, to: startIndex)
+        let endColumn = startColumn + self.distance(from: startIndex, to: endIndex)
         return makeAutolink(startColumn, endColumn, url, isEmail)
     }
 
     convenience init(lineNumber: Int, blockOffset: Int, chunk: StringChunk, refmap: CmarkReferenceMap?) {
         self.init(input: chunk, refmap: refmap)
         self.line = lineNumber
-        self.index = input.startIndex
+        self.curIndex = input.startIndex
         self.blockOffset = blockOffset
         self.columnOffset = 0
         self.lastDelim = nil
@@ -214,8 +220,8 @@ extension Subject {
     func peekChar() -> UnicodeScalar {
         // NULL bytes should have been stripped out by now.  If they're
         // present, it's a programming error:
-        assert(!(index < input.endIndex && input[index] == "\0"))
-        return index < input.endIndex ? input[index] : "\0"
+        assert(!(curIndex < input.endIndex && input[curIndex] == "\0"))
+        return curIndex < input.endIndex ? input[curIndex] : "\0"
     }
     
     fileprivate func peek(at pos: Int) -> UnicodeScalar {
@@ -227,7 +233,7 @@ extension Subject {
     }
     
     fileprivate func peek(at index: String.Index, offset: Int) -> UnicodeScalar {
-        return input[input.string.utf8.index(index, offsetBy: offset)]
+        return input[input.index(index, offsetBy: offset)]
     }
     
     fileprivate func index(after index: String.Index) -> String.Index {
@@ -235,7 +241,7 @@ extension Subject {
     }
     
     fileprivate func indexAfter() -> String.Index {
-        return input.index(after: self.index)
+        return input.index(after: self.curIndex)
     }
     
     fileprivate func index(before index: String.Index) -> String.Index {
@@ -243,7 +249,7 @@ extension Subject {
     }
     
     fileprivate func indexBefore() -> String.Index {
-        return input.index(before: self.index)
+        return input.index(before: self.curIndex)
     }
 
     fileprivate func index(_ index: String.Index, offsetBy: Int) -> String.Index {
@@ -251,39 +257,39 @@ extension Subject {
     }
 
     fileprivate func index(offsetBy: Int) -> String.Index {
-        return input.index(self.index, offsetBy: offsetBy)
+        return input.index(self.curIndex, offsetBy: offsetBy)
     }
 
     fileprivate func distance(from: String.Index, to: String.Index) -> Int {
         return input.distance(from: from, to: to)
     }
     fileprivate func distance(from: String.Index) -> Int {
-        return input.distance(from: from, to: self.index)
+        return input.distance(from: from, to: self.curIndex)
     }
     fileprivate func distance(to: String.Index) -> Int {
-        return input.distance(from: self.index, to: to)
+        return input.distance(from: self.curIndex, to: to)
     }
 
     fileprivate func position(_ index: String.Index) -> Int {
         return input.distance(from: input.startIndex, to: index)
     }
     fileprivate func position() -> Int {
-        return input.distance(from: input.startIndex, to: self.index)
+        return input.distance(from: input.startIndex, to: self.curIndex)
     }
 
     // Return true if there are more characters in the subject.
     var isEof: Bool {
-        return index >= input.endIndex
+        return curIndex >= input.endIndex
     }
     
     // Advance the subject.  Doesn't check for eof.
-    func advance() {index = indexAfter()}
-    ///offset: valid UTF-8 offset
+    func advance() {curIndex = indexAfter()}
+    ///### offset: valid UTF-8 offset
     func advance(_ offset: Int) {
-        index = input.index(index, offsetBy: offset)
+        curIndex = input.index(curIndex, offsetBy: offset)
     }
     func advance(to index: String.Index) {
-        self.index = index
+        self.curIndex = index
     }
 
     @discardableResult
@@ -312,13 +318,13 @@ extension Subject {
     
     // Take characters while a predicate holds, and return a string.
     fileprivate func takeWhile(_ f: (UnicodeScalar)->Bool) -> StringChunk {
-        let start = index
+        let start = curIndex
         
         while case let c = peekChar(), f(c) {
             advance()
         }
         
-        return input.dup(start, index)
+        return input.dup(start, curIndex)
     }
     
     // Return the number of newlines in a given span of text in a subject.  If
@@ -361,7 +367,7 @@ extension Subject {
         
         var sinceNewline: Int = 0
         //###TODO: should update countNewlines()?
-        let pos = self.input.string.utf8.distance(from: input.startIndex, to: index)
+        let pos = self.distance(from: input.startIndex)
         let newlines = countNewlines(from: pos - matchlen - extra, len: matchlen, sinceNewline: &sinceNewline)
         if newlines != 0 {
             line += newlines
@@ -384,7 +390,7 @@ extension Subject {
             return nil
         }
         if scannedForBackticks, let backticksIndex = backticks[openticklength],
-            backticksIndex <= index {
+            backticksIndex <= curIndex {
             // return if we already know there's no closer
             return nil
         }
@@ -403,10 +409,10 @@ extension Subject {
             }
             // store position of ender
             if numticks <= MAXBACKTICKS {
-                backticks[numticks] = input.string.unicodeScalars.index(index, offsetBy: -numticks)
+                backticks[numticks] = index(curIndex, offsetBy: -numticks)
             }
             if numticks == openticklength {
-                return index
+                return curIndex
             }
         }
         // got through whole input without finding closer
@@ -418,22 +424,22 @@ extension Subject {
     // Assumes that the subject has a backtick at the current position.
     fileprivate func handleBackticks(_ options: CmarkOptions) -> CmarkNode {
         let openticks = takeWhile(isbacktick)
-        let startindex = index
+        let startindex = curIndex
         let endindex = scanToClosingBackticks(openticks.len)
 
         if endindex == nil {      // not found
-            index = startindex // rewind
-            return makeStr(index, index, openticks)
+            curIndex = startindex // rewind
+            return makeStr(curIndex, curIndex, openticks)
         } else {
             let buf = StringBuffer()
             
-            buf.set(input.string, startindex, input.string.utf8.index(endindex!, offsetBy: -openticks.len))
+            buf.set(input.string, from: startindex, to: index(endindex!, offsetBy: -openticks.len))
             buf.trim()
             buf.normalizeWhitespace()
             
-            let end = input.string.unicodeScalars.index(endindex!, offsetBy: -openticks.len - 1)
+            let end = index(endindex!, offsetBy: -openticks.len - 1)
             let node = makeCode(startindex, end, buf.bufDetach())
-            let matchlen = input.string.utf8.distance(from: startindex, to: endindex!)
+            let matchlen = distance(from: startindex, to: endindex!)
             adjustSubjNodeNewlines(node, matchlen, openticks.len, options)
             return node
         }
@@ -447,7 +453,7 @@ extension Subject {
         var afterChar: UnicodeScalar = "\0"
         var beforeChar: UnicodeScalar = "\0"
         
-        if index == input.startIndex {
+        if curIndex == input.startIndex {
             beforeChar = "\n"
         } else {
             beforeChar = peek(at: indexBefore())
@@ -463,7 +469,7 @@ extension Subject {
             }
         }
         
-        if index < input.endIndex {
+        if curIndex < input.endIndex {
             afterChar = peekChar()
         } else {
             afterChar = "\n"
@@ -547,7 +553,7 @@ extension Subject {
     }
     
     fileprivate func pushBracket(image: Bool, inlText: CmarkNode) {
-        let b = Bracket()
+        let b = Bracket(index: curIndex)
         if let bracket = lastBracket {
             bracket.bracketAfter = true
         }
@@ -556,7 +562,7 @@ extension Subject {
         b.inlText = inlText
         b.previous = lastBracket
         b.previousDelimiter = lastDelim
-        b.position = distance(from: input.startIndex)
+        //b.position = distance(from: input.startIndex)
         b.bracketAfter = false
         lastBracket = b
     }
@@ -568,14 +574,14 @@ extension Subject {
         
         let numdelims = scanDelims(c, canOpen: &canOpen, canClose: &canClose)
         
-        let start = index(index, offsetBy: -numdelims)
+        let start = index(curIndex, offsetBy: -numdelims)
         if c == "'" && smart {
             contents = StringChunk(literal: RIGHTSINGLEQUOTE)
         } else if c == "\"" && smart {
             contents =
                 StringChunk(literal: canClose ? RIGHTDOUBLEQUOTE : LEFTDOUBLEQUOTE)
         } else {
-            contents = input.dup(start, index)
+            contents = input.dup(start, curIndex)
         }
 
         let inlText = makeStr(start, indexBefore(), contents)
@@ -589,7 +595,7 @@ extension Subject {
     
     // Assumes we have a hyphen at the current position.
     fileprivate func handleHyphen(_ smart: Bool) -> CmarkNode {
-        let startindex = index
+        let startindex = curIndex
         
         advance()
         
@@ -805,13 +811,13 @@ extension Subject {
         let nextchar = peekChar()
         if nextchar.isPunct { // only ascii symbols and newline can be escaped
             advance()
-            let pos_2 = index(index, offsetBy: -2)
-            let pos_1 = index(index, offsetBy: -1)
-            return makeStr(pos_2, pos_1, input.dup(pos_1, index))
+            let pos_2 = index(curIndex, offsetBy: -2)
+            let pos_1 = index(curIndex, offsetBy: -1)
+            return makeStr(pos_2, pos_1, input.dup(pos_1, curIndex))
         } else if !isEof && skipLineEnd() {
             return makeLinebreak()
         } else {
-            let pos_1 = index(index, offsetBy: -1)
+            let pos_1 = index(curIndex, offsetBy: -1)
             return makeStr(pos_1, pos_1, StringChunk(literal: "\\"))
         }
     }
@@ -823,16 +829,16 @@ extension Subject {
         
         advance()
         
-        let len = ent.unescapedEnt(input.string, index, input.endIndex)
+        let len = ent.unescapedEnt(input.string, curIndex, input.endIndex)
         
         if len == 0 {
-            let pos_1 = index(index, offsetBy: -1)
+            let pos_1 = index(curIndex, offsetBy: -1)
             return makeStr(pos_1, pos_1, StringChunk(literal: "&"))
         }
         
-        let pos_1_len = index(index, offsetBy: -1)
+        let pos_1_len = index(curIndex, offsetBy: -1)
         advance(len)
-        let pos_1 = index(index, offsetBy: -1)
+        let pos_1 = index(curIndex, offsetBy: -1)
         return makeStr(pos_1_len, pos_1, ent.bufDetach())
     }
 }
@@ -887,42 +893,42 @@ extension Subject {
         advance() // advance past first <
         
         // first try to match a URL autolink
-        matchlen = input.scanAutolinkUri(index)
+        matchlen = input.scanAutolinkUri(curIndex)
         if matchlen > 0 {
-            let start = input.string.utf8.index(before: index)
-            let end = input.string.utf8.index(index, offsetBy: matchlen - 1)
-            let contents = input.dup(index, end)
-            index = input.string.utf8.index(after: end)
+            let start = indexBefore()
+            let end = index(offsetBy: matchlen - 1)
+            let contents = input.dup(curIndex, end)
+            curIndex = index(after: end)
             
             return makeAutolink(start, end, contents, false)
         }
         
         // next try to match an email autolink
-        matchlen = input.scanAutolinkEmail(index)
+        matchlen = input.scanAutolinkEmail(curIndex)
         if matchlen > 0 {
-            let start = input.string.utf8.index(before: index)
-            let end = input.string.utf8.index(index, offsetBy: matchlen - 1)
-            let contents = input.dup(index, end)
-            index = input.string.utf8.index(after: end)
+            let start = indexBefore()
+            let end = index(offsetBy: matchlen - 1)
+            let contents = input.dup(curIndex, end)
+            curIndex = index(after: end)
 
             return makeAutolink(start, end, contents, true)
         }
         
         // finally, try to match an html tag
-        matchlen = input.scanHtmlTag(index)
+        matchlen = input.scanHtmlTag(curIndex)
         if matchlen > 0 {
-            let start = input.string.utf8.index(before: index)
+            let start = indexBefore()
             let end = index(offsetBy: matchlen)
             let contents = input.dup(start, end)
-            index = end
-            let end2 = input.string.utf8.index(before: index)
+            curIndex = end
+            let end2 = indexBefore()
             let node = makeRawHtml(start, end2, contents)
             adjustSubjNodeNewlines(node, matchlen, 1, options)
             return node
         }
         
         // if nothing matches, just return the opening <:
-        let pos_1 = input.string.utf8.index(before: index)
+        let pos_1 = indexBefore()
         return makeStr(pos_1, pos_1, StringChunk(literal: "<"))
     }
     
@@ -931,7 +937,7 @@ extension Subject {
     // The label begins with `[` and ends with the first `]` character
     // encountered.  Backticks in labels do not start code spans.
     func linkLabel() -> StringChunk? {
-        let startindex = index
+        let startindex = curIndex
         var length: Int = 0
         var c: UnicodeScalar = "\0"
         
@@ -963,15 +969,15 @@ extension Subject {
             }
             
             if c == "]" {
-                let start = input.string.utf8.index(after: startindex)
-                let rawLabel = input.dup(start, index)
+                let start = index(after: startindex)
+                let rawLabel = input.dup(start, curIndex)
                 rawLabel.trim()
                 advance() // advance past ]
                 return rawLabel
             }
         } //### noMatchOnBreak
         
-        index = startindex // rewind
+        curIndex = startindex // rewind
         return nil
     }
 }
@@ -1013,11 +1019,11 @@ extension StringChunk {
         }
         
         output.initialize(string, start, i)
-        return string.utf8.distance(from: start, to: i)
+        return distance(from: start, to: i)
     }
     
     func manualScanLinkUrl(_ startIndex: String.Index, offset: Int = 0, output: StringChunk) -> Int {
-        let start = string.utf8.index(startIndex, offsetBy: offset)
+        let start = index(startIndex, offsetBy: offset)
         //var i = offset
         var i = start
         let usv = string.unicodeScalars
@@ -1045,8 +1051,7 @@ extension StringChunk {
         }
         
         output.initialize(string, usv.index(after: start), usv.index(before: i))
-        //return i - offset
-        return string.utf8.distance(from: start, to: i)
+        return distance(from: start, to: i)
     }
 }
 
@@ -1058,9 +1063,9 @@ extension Subject {
         var url: StringChunk = StringChunk()
         var title: StringChunk = StringChunk()
 
-        let start = index
+        let start = curIndex
         advance() // advance past ]
-        let initialindex = index
+        let initialindex = curIndex
 
         // get last [ or ![
         guard let opener = lastBracket else {
@@ -1078,30 +1083,30 @@ extension Subject {
         // Now we check to see if it's a link/image.
         let isImage = opener.image
         
-        let afterLinkTextIndex = index
+        let afterLinkTextIndex = curIndex
         
         enum Label {case match; case noMatch}
         var gotoLabel: Label = .match
         matchNoMatch: do {
             // First, look for an inline link.
             if peekChar() == "(",
-                case let sps = input.scanSpacechars(index, 1), sps > -1,
-                case let n = input.manualScanLinkUrl(index, offset: 1 + sps,
+                case let sps = input.scanSpacechars(curIndex, 1), sps > -1,
+                case let n = input.manualScanLinkUrl(curIndex, offset: 1 + sps,
                                                      output: urlChunk), n > -1 {
                 
                 // try to parse an explicit link:
-                let endurlindex = input.string.utf8.index(index, offsetBy: 1 + sps + n)
-                let starttitleindex = input.string.utf8.index(endurlindex, offsetBy: input.scanSpacechars(endurlindex))
+                let endurlindex = index(offsetBy: 1 + sps + n)
+                let starttitleindex = index(endurlindex, offsetBy: input.scanSpacechars(endurlindex))
 
                 // ensure there are spaces btw url and title
                 let endtitleindex = starttitleindex == endurlindex
                     ? starttitleindex
-                    : input.string.utf8.index(starttitleindex, offsetBy: input.scanLinkTitle(starttitleindex))
+                    : index(starttitleindex, offsetBy: input.scanLinkTitle(starttitleindex))
 
-                let endallindex = input.string.utf8.index(endtitleindex, offsetBy: input.scanSpacechars(endtitleindex))
+                let endallindex = index(endtitleindex, offsetBy: input.scanSpacechars(endtitleindex))
 
                 if peek(at: endallindex) == ")" {
-                    index = input.string.utf8.index(after: endallindex)
+                    curIndex = index(after: endallindex)
 
                     let titleChunk =
                         input.dup(starttitleindex, endtitleindex)
@@ -1114,7 +1119,7 @@ extension Subject {
                     
                 } else {
                     // it could still be a shortcut reference link
-                    index = afterLinkTextIndex
+                    curIndex = afterLinkTextIndex
                 }
             }
             
@@ -1124,13 +1129,14 @@ extension Subject {
             if rawLabel == nil {
                 // If we have a shortcut reference link, back up
                 // to before the spacse we skipped.
-                index = initialindex
+                curIndex = initialindex
             }
             
             if (rawLabel == nil || rawLabel!.len == 0) && !opener.bracketAfter {
                 rawLabel?.free()
-                let end = input.string.utf8.index(before: initialindex)
-                let start = input.string.utf8.index(input.startIndex, offsetBy: opener.position)
+                let end = input.index(before: initialindex)
+                //let start = input.string.utf8.index(input.startIndex, offsetBy: opener.position)
+                let start = opener.index
                 rawLabel = input.dup(start,
                                      end)
             }
@@ -1156,8 +1162,8 @@ extension Subject {
         case .noMatch:
             // If we fall through to here, it means we didn't match a link:
             popBracket() // remove this opener from delimiter list
-            index = initialindex
-            let pos_1 = input.string.utf8.index(before: index)
+            curIndex = initialindex
+            let pos_1 = index(before: curIndex)
             return makeStr(pos_1, pos_1, StringChunk(literal: "]"))
             
         case .match:
@@ -1167,7 +1173,7 @@ extension Subject {
             inl.startLine = line
             inl.endLine = line
             inl.startColumn = opener.inlText?.startColumn ?? 0
-            let pos = input.string.utf8.distance(from: input.startIndex, to: index)
+            let pos = distance(from: input.startIndex)
             inl.endColumn = pos + columnOffset + blockOffset
             opener.inlText?.insertBeforeMe(inl)
             // Add link text:
@@ -1208,20 +1214,20 @@ extension Subject {
     // Parse a hard or soft linebreak, returning an inline.
     // Assumes the subject has a cr or newline at the current position.
     fileprivate func handleNewline() -> CmarkNode {
-        let nlindex = index
+        let nlindex = curIndex
         // skip over cr, crlf, or lf:
-        if peek(at: index) == "\r" {
+        if peek(at: curIndex) == "\r" {
             advance()
         }
-        if peek(at: index) == "\n" {
+        if peek(at: curIndex) == "\n" {
             advance()
         }
         line += 1
-        let pos = input.string.utf8.distance(from: input.startIndex, to: index)
+        let pos = distance(from: input.startIndex)
         columnOffset = -pos
         // skip spaces at beginning of line
         skipSpaces()
-        if input.string.utf8.distance(from: input.startIndex, to: nlindex) > 1 && peek(at: nlindex, offset: -1) == " " &&
+        if distance(from: input.startIndex, to: nlindex) > 1 && peek(at: nlindex, offset: -1) == " " &&
             peek(at: nlindex, offset: -2) == " " {
             return makeLinebreak()
         } else {
@@ -1229,7 +1235,7 @@ extension Subject {
         }
     }
     
-    fileprivate func findSpecialChar(_ options: CmarkOptions) -> Int {
+    fileprivate func findSpecialChar(_ options: CmarkOptions) -> String.Index {
         // "\r\n\\`&_*[]<!"
         let SPECIAL_CHARS: [Int8] = [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0,
@@ -1264,15 +1270,15 @@ extension Subject {
 
         while n < input.endIndex {
             if isSpecialChar(input[n]) {
-                return position(n)
+                return n
             }
             if options.contains(.smart) && isSmartPunctChar(input[n]) {
-                return position(n)
+                return n
             }
             n = index(after: n)
         }
         
-        return input.len
+        return input.endIndex
     }
     
     // Parse an inline, advancing subject, and add it as a child of parent.
@@ -1320,11 +1326,10 @@ extension Subject {
                 newInl = makeStr(pos_1, pos_1, StringChunk(literal: "!"))
             }
         default:
-            let endpos = findSpecialChar(options)
-            let endindex = index(input.startIndex, offsetBy: endpos)
-            let contents = input.dup(index, endindex)
-            let startindex = index
-            index = endindex
+            let endindex = findSpecialChar(options)
+            let contents = input.dup(curIndex, endindex)
+            let startindex = curIndex
+            curIndex = endindex
             
             // if we're at a newline, strip trailing spaces.
             if peekChar().isLineEnd {
@@ -1395,23 +1400,23 @@ extension StringChunk {
         
         // parse link url:
         subj.spnl()
-        if case let matchlen = subj.input.manualScanLinkUrl(subj.index, output: url), matchlen > -1, !url.isEmpty {
+        if case let matchlen = subj.input.manualScanLinkUrl(subj.curIndex, output: url), matchlen > -1, !url.isEmpty {
             subj.advance(matchlen)
         } else {
             return nil
         }
         
         // parse optional link_title
-        let beforetitle = subj.index
+        let beforetitle = subj.curIndex
         subj.spnl()
-        let matchlen = subj.input.scanLinkTitle(subj.index)
+        let matchlen = subj.input.scanLinkTitle(subj.curIndex)
         let title: StringChunk
         if matchlen > 0 {
-            let end = subj.input.string.utf8.index(subj.index, offsetBy: matchlen)
-            title = subj.input.dup(subj.index, end)
+            let end = subj.index(subj.curIndex, offsetBy: matchlen)
+            title = subj.input.dup(subj.curIndex, end)
             subj.advance(to: end)
         } else {
-            subj.index = beforetitle
+            subj.curIndex = beforetitle
             title = StringChunk(literal: "")
         }
         
@@ -1419,7 +1424,7 @@ extension StringChunk {
         subj.skipSpaces()
         if !subj.skipLineEnd() {
             if matchlen > 0 { // try rewinding before title
-                subj.index = beforetitle
+                subj.curIndex = beforetitle
                 subj.skipSpaces()
                 if !subj.skipLineEnd() {
                     return nil
@@ -1430,6 +1435,6 @@ extension StringChunk {
         }
         // insert reference into refmap
         refmap.create(label: lab, url: url, title: title)
-        return subj.index
+        return subj.curIndex
     }
 }

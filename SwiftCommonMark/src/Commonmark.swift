@@ -71,7 +71,7 @@ private func longest_backtick_sequence(_ code: StringBufferType) -> Int {
         if index == code.endIndex {
             break
         }
-        index = code.string.unicodeScalars.index(after: index)
+        index = code.index(after: index)
     }
     return longest
 }
@@ -94,7 +94,7 @@ private func shortest_unused_backtick_sequence(_ code: StringBufferType) -> Int 
         if index == code.endIndex {
             break
         }
-        index = code.string.unicodeScalars.index(after: index)
+        index = code.index(after: index)
     }
     // return number of first bit that is 0:
     var i = 0

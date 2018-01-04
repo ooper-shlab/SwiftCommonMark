@@ -104,7 +104,7 @@ extension CmarkParser {
 extension StringBuffer {
     // Returns true if line has only space characters, else false.
     fileprivate func isBlank(_ offset: Int) -> Bool {
-        var index = string.utf8.index(startIndex, offsetBy: offset)
+        var index = self.index(startIndex, offsetBy: offset)
         let usv = string.unicodeScalars
         while index < endIndex {
             switch usv[index] {
@@ -1168,19 +1168,14 @@ extension CmarkParser {
 
         lineNumber += 1
         
-        let lastMatchedContainer = checkOpenBlocks(input: input, allMatched: &allMatched)
-        
-        finishedOnBreak: do {
-            if lastMatchedContainer == nil {
-                break finishedOnBreak
-            }
+        if let lastMatchedContainer = checkOpenBlocks(input: input, allMatched: &allMatched) {
             
-            var container = lastMatchedContainer!
+            var container = lastMatchedContainer
             openNewBlocks(container: &container, input: input, allMatched: allMatched)
             
             add(to: container, lastMatchedContainer: lastMatchedContainer, text: input)
             
-        } //### finishedOnBreak
+        }
         
         lastLineLength = input.len
         if lastLineLength != 0 &&
