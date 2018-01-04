@@ -177,9 +177,7 @@
 		D7549A3A1FEDE69F00B44259 /* cmark.3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmark.3; sourceTree = "<group>"; };
 		D7549A3C1FEDE69F00B44259 /* README.orig.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.orig.md; sourceTree = "<group>"; };
 		D7549A3F1FEDE69F00B44259 /* Blocks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Blocks.swift; sourceTree = "<group>"; };
-		D7549A421FEDE69F00B44259 /* Buffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Buffer.swift; sourceTree = "<group>"; };
 		D7549A431FEDE69F00B44259 /* case_fold_switch.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; path = case_fold_switch.inc; sourceTree = "<group>"; };
-		D7549A451FEDE69F00B44259 /* Chunk.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Chunk.swift; sourceTree = "<group>"; };
 		D7549A491FEDE69F00B44259 /* Cmark.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cmark.swift; sourceTree = "<group>"; };
 		D7549A4D1FEDE69F00B44259 /* CmarkCtype.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CmarkCtype.swift; sourceTree = "<group>"; };
 		D7549A4E1FEDE69F00B44259 /* CmarkVersion.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CmarkVersion.swift; sourceTree = "<group>"; };
@@ -367,11 +365,9 @@
 			isa = PBXGroup;
 			children = (
 				D7549A3F1FEDE69F00B44259 /* Blocks.swift */,
-				D7549A421FEDE69F00B44259 /* Buffer.swift */,
 				D7C5D9241FFB937600C607DA /* StringBuffer.swift */,
 				D7549A431FEDE69F00B44259 /* case_fold_switch.inc */,
 				D77A4E331FEFD8700057F8AD /* CaseFoldSwitch.swift */,
-				D7549A451FEDE69F00B44259 /* Chunk.swift */,
 				D7C5D9221FFB929700C607DA /* StringChunk.swift */,
 				D7549A491FEDE69F00B44259 /* Cmark.swift */,
 				D7549A4D1FEDE69F00B44259 /* CmarkCtype.swift */,

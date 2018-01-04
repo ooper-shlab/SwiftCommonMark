@@ -74,6 +74,7 @@ while i < argc {
     case "--version":
         print("cmark \(CMARK_VERSION_STRING)")
         print(" - CommonMark converter\n(C) 2014-2016 John MacFarlane")
+        print(" - SwiftCommonMark \n(C) 2017-2018 OOPer(NAGATA, Atsuyuki)")
         exit(0)
     case "--sourcepos":
         options.formUnion(.sourcepos)

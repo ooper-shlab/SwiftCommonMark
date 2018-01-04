@@ -85,15 +85,15 @@ extension StringBufferType {
         rtrim()
     }
     
-    ///### _len: valid UTF-8 length from startIndex
+    ///### _len: valid UTF-8 length from startIndex, or negative (do nothing)
     func truncate(_ _len: Int) {
         var len = _len
         if len < 0 {
             len = 0
         }
         
-        if len < size {
-            self.endIndex = string.utf8.index(self.startIndex, offsetBy: len)
+        if let index = string.index(startIndex, offsetBy: len, limitedBy: endIndex) {
+            self.endIndex = index
         }
     }
     ///### endIndex: >= self.startIndex && <= self.endIndex
@@ -106,14 +106,10 @@ extension StringBufferType {
         self.startIndex = from
     }
     
-    ///### len: valid UTF-8 length
-    func drop(_ _len: Int) {
-        var len = _len
+    ///### len: valid UTF-8 length from startIndex, or negative (do nothing)
+    func drop(_ len: Int) {
         if len > 0 {
-            if len > size {
-                len = size
-            }
-            self.startIndex = string.utf8.index(startIndex, offsetBy: len)
+            self.startIndex = string.utf8.index(startIndex, offsetBy: len, limitedBy: endIndex) ?? endIndex
         }
     }
 

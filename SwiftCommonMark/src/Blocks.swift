@@ -24,10 +24,10 @@ import Foundation
 let CODE_INDENT = 4
 let TAB_STOP = 4
 
-extension StringChunk {
-    ///### n: valid UTF-8 offset from startIndex
-    func peek(at n: Int) -> UnicodeScalar {return self[n]}
-}
+//extension StringChunk {
+//    ///### n: valid UTF-8 offset from startIndex
+//    func peek(at n: Int) -> UnicodeScalar {return self[n]}
+//}
 
 extension CmarkNode {
     fileprivate var isLastLineBlank: Bool {
@@ -517,13 +517,15 @@ public func cmark_parse_document(_ str: String, _ options: CmarkOptions) -> Cmar
     return cmark_parse_document(data, options)
 }
 public func cmark_parse_document(_ data: Data, _ options: CmarkOptions) -> CmarkNode {
-    let parser = CmarkParser(options: options)
-    
-    parser.feed(data)
-    
-    let document = parser.finish()
-    parser.free()
-    return document
+    return autoreleasepool {
+        let parser = CmarkParser(options: options)
+        
+        parser.feed(data)
+        
+        let document = parser.finish()
+        parser.free()
+        return document
+    }
 }
 
 extension CmarkParser {
@@ -605,18 +607,19 @@ extension StringChunk {
     fileprivate func chopTrailingHashtags() {
         
         rtrim()
-        var n = len - 1
+        var n = index(before: endIndex)
         let origN = n
         
-        //###TODO: repeated accessing by Int offset is inefficient
         // if string ends in space followed by #s, remove these:
-        while n >= 0 && peek(at: n) == "#" {
-            n -= 1
+        while n >= startIndex && self[n] == "#" {
+            if n == startIndex {
+                return
+            }
+            n = index(before: n)
         }
         
-        //###TODO: repeated accessing by Int offset is inefficient
         // Check for a space before the final #s:
-        if n != origN && n >= 0 && peek(at: n).isSpaceOrTab {
+        if n < origN && self[n].isSpaceOrTab {
             truncate(n)
             rtrim()
         }
@@ -717,7 +720,7 @@ extension CmarkParser {
         if matched {
             
             advanceOffset(input: input, to: parseIndex, offset: indent + 1, columns: true)
-
+            
             if input[parseIndex].isSpaceOrTab {
                 advanceOffset(input: input, to: parseIndex, offset: 1, columns: true)
             }
@@ -872,152 +875,154 @@ extension CmarkParser {
         var contType = container.type
         
         while contType != .codeBlock && contType != .htmlBlock {
-            
-            findFirstNonspace(input: input)
-            let indented = indent >= CODE_INDENT
-            
-            if !indented && input[firstNonspaceIndex] == ">" {
+            var shouldBreak = false
+            autoreleasepool{
+                findFirstNonspace(input: input)
+                let indented = indent >= CODE_INDENT
                 
-                let blockquoteStartColumn = firstNonspaceColumn
-                
-                advanceOffset(input: input, to: firstNonspaceIndex, offset: 1, columns: false)
-                if input[parseIndex].isSpaceOrTab {
+                if !indented && input[firstNonspaceIndex] == ">" {
                     
-                    advanceOffset(input: input, to: parseIndex, offset: 1, columns: true)
-                }
-                container = addChild(parent: container, blockType: .blockQuote,
-                                     startColumn: blockquoteStartColumn + 1)
-
-            } else if !indented,
-                case let matched = input.scanAtxHeadingStart(firstNonspaceIndex), matched != 0 {
-                var level = 0
-                let headingStartColumn = firstNonspaceColumn
-                
-                advanceOffset(input: input,
-                              to: firstNonspaceIndex, offset: matched,
-                              columns: false)
-                container = addChild(parent: container, blockType: .heading,
-                                     startColumn: headingStartColumn + 1)
-                
-                var hashIndex = input.strchr("#", firstNonspaceIndex)!
-
-                while input[hashIndex] == "#" {
-                    level += 1
-                    hashIndex = input.index(after: hashIndex)
-                }
-                
-                container.asType = .heading(CmarkHeading(level: level, setext: false))
-                container.internalOffset = matched
-                
-            } else if !indented,
-                case let matched = input.scanOpenCodeFence(firstNonspaceIndex), matched != 0 {
-                container = addChild(parent: container, blockType: .codeBlock,
-                                     startColumn: firstNonspaceColumn + 1)
-                var code = container.asCode ?? CmarkCode()
-                code.fenced = true
-                code.fenceChar = input[firstNonspaceIndex]
-                code.fenceLength = (matched > 255) ? 255 : matched
-                code.fenceOffset = input.distance(from: parseIndex, to: firstNonspaceIndex)
-                code.info = StringChunk(literal: "")
-                container.asType = .code(code)
-                advanceOffset(input: input,
-                    to: firstNonspaceIndex, offset: matched,
-                              columns: false)
-                
-            } else if !indented,
-                case let matched = input.scanHtmlBlockStartN7(firstNonspaceIndex, contType),
-                matched != 0 {
-                container = addChild(parent: container, blockType: .htmlBlock,
-                                     startColumn: firstNonspaceColumn + 1)
-                container.asType = .htmlBlockType(matched)
-                // note, we don't adjust parser->offset because the tag is part of the
-                // text
-            } else if !indented && contType == .paragraph,
-                case let lev = input.scanSetextHeadingLine(firstNonspaceIndex), lev != 0 {
-                container.type = .heading
-                container.asType = .heading(CmarkHeading(level: lev, setext: true))
-                advanceOffset(input: input, to: input.endIndex, offset: -1, columns: false)
-            } else if !indented,
-                !(contType == .paragraph && !allMatched),
-                case let matched = input.scanThematicBreak(firstNonspaceIndex), matched != 0 {
-                // it's only now that we know the line is not part of a setext heading:
-                container = addChild(parent: container, blockType: .thematicBreak,
-                                     startColumn: firstNonspaceColumn + 1)
-                advanceOffset(input: input, to: input.endIndex, offset:  -1, columns: false)
-            } else if (!indented || contType == .list),
-                case let matched = input.parseListMarker(
-                    index: firstNonspaceIndex,
-                    interruptsParagraph: container.type == .paragraph, dataptr: &data), matched != 0,
-                var data = data {
-                
-                // Note that we can have new list items starting with >= 4
-                // spaces indent, as long as the list container is still open.
-                var i = 0
-                
-                // compute padding:
-                advanceOffset(input: input,
-                    to: firstNonspaceIndex, offset: matched,
-                              columns: false)
-                
-                let savePartiallyConsumedTab = partiallyConsumedTab
-                let saveIndex = parseIndex
-                let saveColumn = column
-                
-                while column - saveColumn <= 5 &&
-                    input[parseIndex].isSpaceOrTab {
-                        advanceOffset(input: input, to: parseIndex, offset: 1, columns: true)
-                }
-                
-                i = column - saveColumn
-                if i >= 5 || i < 1 ||
-                    // only spaces after list marker:
-                    input[parseIndex].isLineEnd {
-                    data.padding = matched + 1
-                    parseIndex = saveIndex
-                    column = saveColumn
-                    partiallyConsumedTab = savePartiallyConsumedTab
-                    if i > 0 {
+                    let blockquoteStartColumn = firstNonspaceColumn
+                    
+                    advanceOffset(input: input, to: firstNonspaceIndex, offset: 1, columns: false)
+                    if input[parseIndex].isSpaceOrTab {
+                        
                         advanceOffset(input: input, to: parseIndex, offset: 1, columns: true)
                     }
-                } else {
-                    data.padding = matched + i
-                }
-                
-                // check container; if it's a list, see if this list item
-                // can continue the list; otherwise, create a list container.
-                
-                data.markerOffset = indent
-                
-                if contType != .list ||
-                    !(container.asList?.doesMatch(data) ?? false) {
-                    container = addChild(parent: container, blockType: .list,
-                                         startColumn: firstNonspaceColumn + 1)
+                    container = addChild(parent: container, blockType: .blockQuote,
+                                         startColumn: blockquoteStartColumn + 1)
                     
+                } else if !indented,
+                    case let matched = input.scanAtxHeadingStart(firstNonspaceIndex), matched != 0 {
+                    var level = 0
+                    let headingStartColumn = firstNonspaceColumn
+                    
+                    advanceOffset(input: input,
+                                  to: firstNonspaceIndex, offset: matched,
+                                  columns: false)
+                    container = addChild(parent: container, blockType: .heading,
+                                         startColumn: headingStartColumn + 1)
+                    
+                    var hashIndex = input.strchr("#", firstNonspaceIndex)!
+                    
+                    while input[hashIndex] == "#" {
+                        level += 1
+                        hashIndex = input.index(after: hashIndex)
+                    }
+                    
+                    container.asType = .heading(CmarkHeading(level: level, setext: false))
+                    container.internalOffset = matched
+                    
+                } else if !indented,
+                    case let matched = input.scanOpenCodeFence(firstNonspaceIndex), matched != 0 {
+                    container = addChild(parent: container, blockType: .codeBlock,
+                                         startColumn: firstNonspaceColumn + 1)
+                    var code = container.asCode ?? CmarkCode()
+                    code.fenced = true
+                    code.fenceChar = input[firstNonspaceIndex]
+                    code.fenceLength = (matched > 255) ? 255 : matched
+                    code.fenceOffset = input.distance(from: parseIndex, to: firstNonspaceIndex)
+                    code.info = StringChunk(literal: "")
+                    container.asType = .code(code)
+                    advanceOffset(input: input,
+                                  to: firstNonspaceIndex, offset: matched,
+                                  columns: false)
+                    
+                } else if !indented,
+                    case let matched = input.scanHtmlBlockStartN7(firstNonspaceIndex, contType),
+                    matched != 0 {
+                    container = addChild(parent: container, blockType: .htmlBlock,
+                                         startColumn: firstNonspaceColumn + 1)
+                    container.asType = .htmlBlockType(matched)
+                    // note, we don't adjust parser->offset because the tag is part of the
+                    // text
+                } else if !indented && contType == .paragraph,
+                    case let lev = input.scanSetextHeadingLine(firstNonspaceIndex), lev != 0 {
+                    container.type = .heading
+                    container.asType = .heading(CmarkHeading(level: lev, setext: true))
+                    advanceOffset(input: input, to: input.endIndex, offset: -1, columns: false)
+                } else if !indented,
+                    !(contType == .paragraph && !allMatched),
+                    case let matched = input.scanThematicBreak(firstNonspaceIndex), matched != 0 {
+                    // it's only now that we know the line is not part of a setext heading:
+                    container = addChild(parent: container, blockType: .thematicBreak,
+                                         startColumn: firstNonspaceColumn + 1)
+                    advanceOffset(input: input, to: input.endIndex, offset:  -1, columns: false)
+                } else if (!indented || contType == .list),
+                    case let matched = input.parseListMarker(
+                        index: firstNonspaceIndex,
+                        interruptsParagraph: container.type == .paragraph, dataptr: &data), matched != 0,
+                    var data = data {
+                    
+                    // Note that we can have new list items starting with >= 4
+                    // spaces indent, as long as the list container is still open.
+                    var i = 0
+                    
+                    // compute padding:
+                    advanceOffset(input: input,
+                                  to: firstNonspaceIndex, offset: matched,
+                                  columns: false)
+                    
+                    let savePartiallyConsumedTab = partiallyConsumedTab
+                    let saveIndex = parseIndex
+                    let saveColumn = column
+                    
+                    while column - saveColumn <= 5 &&
+                        input[parseIndex].isSpaceOrTab {
+                            advanceOffset(input: input, to: parseIndex, offset: 1, columns: true)
+                    }
+                    
+                    i = column - saveColumn
+                    if i >= 5 || i < 1 ||
+                        // only spaces after list marker:
+                        input[parseIndex].isLineEnd {
+                        data.padding = matched + 1
+                        parseIndex = saveIndex
+                        column = saveColumn
+                        partiallyConsumedTab = savePartiallyConsumedTab
+                        if i > 0 {
+                            advanceOffset(input: input, to: parseIndex, offset: 1, columns: true)
+                        }
+                    } else {
+                        data.padding = matched + i
+                    }
+                    
+                    // check container; if it's a list, see if this list item
+                    // can continue the list; otherwise, create a list container.
+                    
+                    data.markerOffset = indent
+                    
+                    if contType != .list ||
+                        !(container.asList?.doesMatch(data) ?? false) {
+                        container = addChild(parent: container, blockType: .list,
+                                             startColumn: firstNonspaceColumn + 1)
+                        
+                        container.asType = .list(data)
+                    }
+                    
+                    // add the list item
+                    container = addChild(parent: container, blockType: .item,
+                                         startColumn: firstNonspaceColumn + 1)
+                    /* TODO: static */
                     container.asType = .list(data)
+                } else if indented && !maybeLazy && !blank {
+                    advanceOffset(input: input, to: parseIndex, offset: CODE_INDENT, columns: true)
+                    container = addChild(parent: container, blockType: .codeBlock,
+                                         startColumn: column + 1)
+                    var code = container.asCode ?? CmarkCode()
+                    code.fenced = false
+                    code.fenceChar = "\0"
+                    code.fenceLength = 0
+                    code.fenceOffset = 0
+                    code.info = StringChunk(literal: "")
+                    container.asType = .code(code)
+                    
+                } else {
+                    shouldBreak = true
                 }
-                
-                // add the list item
-                container = addChild(parent: container, blockType: .item,
-                                     startColumn: firstNonspaceColumn + 1)
-                /* TODO: static */
-                container.asType = .list(data)
-            } else if indented && !maybeLazy && !blank {
-                advanceOffset(input: input, to: parseIndex, offset: CODE_INDENT, columns: true)
-                container = addChild(parent: container, blockType: .codeBlock,
-                                     startColumn: column + 1)
-                var code = container.asCode ?? CmarkCode()
-                code.fenced = false
-                code.fenceChar = "\0"
-                code.fenceLength = 0
-                code.fenceOffset = 0
-                code.info = StringChunk(literal: "")
-                container.asType = .code(code)
-                
-            } else {
-                break
             }
             
-            if container.type.acceptsLines {
+            if shouldBreak || container.type.acceptsLines {
                 // if it's a line container, it can't contain other containers
                 break
             }
@@ -1139,43 +1144,44 @@ extension CmarkParser {
     }
     func processLine(_ string: String, _ startIndex: String.Index, _ endIndex: String.Index) {
         var allMatched = true
-        
-        curline.put(string, startIndex, endIndex)
-        
-        // ensure line ends with a newline:
-        if curline.isEmpty || !curline.last!.isLineEnd {
-            curline.putc("\n")
-        }
-        
-        column = 0
-        blank = false
-        partiallyConsumedTab = false
-        
-        let input = StringChunk(content: curline)
-        parseIndex = input.startIndex
-
-        lineNumber += 1
-        
-        if let lastMatchedContainer = checkOpenBlocks(input: input, allMatched: &allMatched) {
+        autoreleasepool{
+            curline.put(string, startIndex, endIndex)
             
-            var container = lastMatchedContainer
-            openNewBlocks(container: &container, input: input, allMatched: allMatched)
+            // ensure line ends with a newline:
+            if curline.isEmpty || !curline.last!.isLineEnd {
+                curline.putc("\n")
+            }
             
-            add(to: container, lastMatchedContainer: lastMatchedContainer, text: input)
+            column = 0
+            blank = false
+            partiallyConsumedTab = false
             
+            let input = StringChunk(content: curline)
+            parseIndex = input.startIndex
+            
+            lineNumber += 1
+            
+            if let lastMatchedContainer = checkOpenBlocks(input: input, allMatched: &allMatched) {
+                
+                var container = lastMatchedContainer
+                openNewBlocks(container: &container, input: input, allMatched: allMatched)
+                
+                add(to: container, lastMatchedContainer: lastMatchedContainer, text: input)
+                
+            }
+            
+            lastLineLength = input.len
+            if lastLineLength != 0 &&
+                input[lastLineLength - 1] == "\n" {
+                lastLineLength -= 1
+            }
+            if lastLineLength != 0 &&
+                input[lastLineLength - 1] == "\r" {
+                lastLineLength -= 1
+            }
+            
+            curline.clear()
         }
-        
-        lastLineLength = input.len
-        if lastLineLength != 0 &&
-            input[lastLineLength - 1] == "\n" {
-            lastLineLength -= 1
-        }
-        if lastLineLength != 0 &&
-            input[lastLineLength - 1] == "\r" {
-            lastLineLength -= 1
-        }
-        
-        curline.clear()
     }
     
     

@@ -114,7 +114,7 @@ extension Subject {
     }
     private func makeLiteral(_ t: CmarkNodeType,
                              _ startIndex: String.Index, _ endIndex: String.Index,
-        _ s: StringChunk) -> CmarkNode {
+                             _ s: StringChunk) -> CmarkNode {
         //###TODO: This consumes CPU time in huge lines...
         let startColumn = self.distance(from: input.startIndex, to: startIndex)
         let endColumn = self.distance(from: startIndex, to: endIndex) + startColumn
@@ -135,7 +135,7 @@ extension Subject {
         _ startColumn: Int, _ endColumn: Int,
         _ content: StringChunk) -> CmarkNode {
         let unescaped = StringBuffer()
-
+        
         if unescaped.unescapeHtml(content) {
             return makeStr(startColumn, endColumn, unescaped.bufDetach())
         } else {
@@ -198,7 +198,7 @@ extension Subject {
         let endColumn = startColumn + self.distance(from: startIndex, to: endIndex)
         return makeAutolink(startColumn, endColumn, url, isEmail)
     }
-
+    
     convenience init(lineNumber: Int, blockOffset: Int, chunk: StringChunk, refmap: CmarkReferenceMap?) {
         self.init(input: chunk, refmap: refmap)
         self.line = lineNumber
@@ -224,9 +224,9 @@ extension Subject {
         return curIndex < input.endIndex ? input[curIndex] : "\0"
     }
     
-    fileprivate func peek(at pos: Int) -> UnicodeScalar {
-        return input[pos]
-    }
+//    fileprivate func peek(at pos: Int) -> UnicodeScalar {
+//        return input[pos]
+//    }
     
     fileprivate func peek(at index: String.Index) -> UnicodeScalar {
         return input[index]
@@ -251,15 +251,15 @@ extension Subject {
     fileprivate func indexBefore() -> String.Index {
         return input.index(before: self.curIndex)
     }
-
+    
     fileprivate func index(_ index: String.Index, offsetBy: Int) -> String.Index {
         return input.index(index, offsetBy: offsetBy)
     }
-
+    
     fileprivate func index(offsetBy: Int) -> String.Index {
         return input.index(self.curIndex, offsetBy: offsetBy)
     }
-
+    
     fileprivate func distance(from: String.Index, to: String.Index) -> Int {
         return input.distance(from: from, to: to)
     }
@@ -269,14 +269,14 @@ extension Subject {
     fileprivate func distance(to: String.Index) -> Int {
         return input.distance(from: self.curIndex, to: to)
     }
-
+    
     fileprivate func position(_ index: String.Index) -> Int {
         return input.distance(from: input.startIndex, to: index)
     }
     fileprivate func position() -> Int {
         return input.distance(from: input.startIndex, to: self.curIndex)
     }
-
+    
     // Return true if there are more characters in the subject.
     var isEof: Bool {
         return curIndex >= input.endIndex
@@ -291,7 +291,7 @@ extension Subject {
     func advance(to index: String.Index) {
         self.curIndex = index
     }
-
+    
     @discardableResult
     func skipSpaces() -> Bool {
         var skipped = false
@@ -426,7 +426,7 @@ extension Subject {
         let openticks = takeWhile(isbacktick)
         let startindex = curIndex
         let endindex = scanToClosingBackticks(openticks.len)
-
+        
         if endindex == nil {      // not found
             curIndex = startindex // rewind
             return makeStr(curIndex, curIndex, openticks)
@@ -583,9 +583,9 @@ extension Subject {
         } else {
             contents = input.dup(start, curIndex)
         }
-
+        
         let inlText = makeStr(start, indexBefore(), contents)
-
+        
         if (canOpen || canClose) && (!(c == "'" || c == "\"") || smart) {
             pushDelimiter(c, canOpen: canOpen, canClose: canClose, inlText: inlText)
         }
@@ -760,7 +760,7 @@ extension Subject {
         closerNumChars -= useDelim
         openerInl.asLiteral?.truncate(openerNumChars)
         closerInl.asLiteral?.truncate(closerNumChars)
-
+        
         // free delimiters between opener and closer
         var delim = closer.previous
         while let theDelim = delim, theDelim !== opener {
@@ -910,7 +910,7 @@ extension Subject {
             let end = index(offsetBy: matchlen - 1)
             let contents = input.dup(curIndex, end)
             curIndex = index(after: end)
-
+            
             return makeAutolink(start, end, contents, true)
         }
         
@@ -1062,11 +1062,11 @@ extension Subject {
         let urlChunk = StringChunk()
         var url: StringChunk = StringChunk()
         var title: StringChunk = StringChunk()
-
+        
         let start = curIndex
         advance() // advance past ]
         let initialindex = curIndex
-
+        
         // get last [ or ![
         guard let opener = lastBracket else {
             
@@ -1097,17 +1097,17 @@ extension Subject {
                 // try to parse an explicit link:
                 let endurlindex = index(offsetBy: 1 + sps + n)
                 let starttitleindex = index(endurlindex, offsetBy: input.scanSpacechars(endurlindex))
-
+                
                 // ensure there are spaces btw url and title
                 let endtitleindex = starttitleindex == endurlindex
                     ? starttitleindex
                     : index(starttitleindex, offsetBy: input.scanLinkTitle(starttitleindex))
-
+                
                 let endallindex = index(endtitleindex, offsetBy: input.scanSpacechars(endtitleindex))
-
+                
                 if peek(at: endallindex) == ")" {
                     curIndex = index(after: endallindex)
-
+                    
                     let titleChunk =
                         input.dup(starttitleindex, endtitleindex)
                     url = urlChunk.cleanUrl()
@@ -1246,11 +1246,11 @@ extension Subject {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1,
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]
+            ]
         func isSpecialChar(_ ch: UnicodeScalar) -> Bool {
             return ch.value < 128 && SPECIAL_CHARS[Int(ch.value)] != 0
         }
-
+        
         // " ' . -
         let SMART_PUNCT_CHARS: [Int8] = [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1267,7 +1267,7 @@ extension Subject {
         }
         
         var n = indexAfter()
-
+        
         while n < input.endIndex {
             if isSpecialChar(input[n]) {
                 return n
@@ -1289,57 +1289,59 @@ extension Subject {
         if c == "\0" {
             return false
         }
-        switch c {
-        case "\r", "\n":
-            newInl = handleNewline()
-        case "`":
-            newInl = handleBackticks(options)
-        case "\\":
-            newInl = handleBackslash()
-        case "&":
-            newInl = handleEntity()
-        case "<":
-            newInl = handlePointyBrace(options)
-        case "*", "_", "'", "\"":
-            newInl = handleDelim(c, options.contains(.smart))
-        case "-":
-            newInl = handleHyphen(options.contains(.smart))
-        case ".":
-            newInl = handlePeriod(options.contains(.smart))
-        case "[":
-            advance()
-            let pos_1 = index(offsetBy: -1)
-            newInl = makeStr(pos_1, pos_1, StringChunk(literal: "["))
-            pushBracket(image: false, inlText: newInl!)
-        case "]":
-            newInl = handleCloseBracket()
-        case "!":
-            advance()
-            if peekChar() == "[" {
+        autoreleasepool{
+            switch c {
+            case "\r", "\n":
+                newInl = handleNewline()
+            case "`":
+                newInl = handleBackticks(options)
+            case "\\":
+                newInl = handleBackslash()
+            case "&":
+                newInl = handleEntity()
+            case "<":
+                newInl = handlePointyBrace(options)
+            case "*", "_", "'", "\"":
+                newInl = handleDelim(c, options.contains(.smart))
+            case "-":
+                newInl = handleHyphen(options.contains(.smart))
+            case ".":
+                newInl = handlePeriod(options.contains(.smart))
+            case "[":
                 advance()
                 let pos_1 = index(offsetBy: -1)
-                let pos_2 = index(pos_1, offsetBy: -1)
-                newInl = makeStr(pos_2, pos_1, StringChunk(literal: "!["))
-                pushBracket(image: true, inlText: newInl!)
-            } else {
-                let pos_1 = index(offsetBy: -1)
-                newInl = makeStr(pos_1, pos_1, StringChunk(literal: "!"))
+                newInl = makeStr(pos_1, pos_1, StringChunk(literal: "["))
+                pushBracket(image: false, inlText: newInl!)
+            case "]":
+                newInl = handleCloseBracket()
+            case "!":
+                advance()
+                if peekChar() == "[" {
+                    advance()
+                    let pos_1 = index(offsetBy: -1)
+                    let pos_2 = index(pos_1, offsetBy: -1)
+                    newInl = makeStr(pos_2, pos_1, StringChunk(literal: "!["))
+                    pushBracket(image: true, inlText: newInl!)
+                } else {
+                    let pos_1 = index(offsetBy: -1)
+                    newInl = makeStr(pos_1, pos_1, StringChunk(literal: "!"))
+                }
+            default:
+                let endindex = findSpecialChar(options)
+                let contents = input.dup(curIndex, endindex)
+                let startindex = curIndex
+                curIndex = endindex
+                
+                // if we're at a newline, strip trailing spaces.
+                if peekChar().isLineEnd {
+                    contents.rtrim()
+                }
+                
+                newInl = makeStr(startindex, index(before: endindex), contents)
             }
-        default:
-            let endindex = findSpecialChar(options)
-            let contents = input.dup(curIndex, endindex)
-            let startindex = curIndex
-            curIndex = endindex
-            
-            // if we're at a newline, strip trailing spaces.
-            if peekChar().isLineEnd {
-                contents.rtrim()
+            if let newInl = newInl {
+                parent.append(child: newInl)
             }
-            
-            newInl = makeStr(startindex, index(before: endindex), contents)
-        }
-        if let newInl = newInl {
-            parent.append(child: newInl)
         }
         
         return true

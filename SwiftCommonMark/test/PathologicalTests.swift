@@ -154,46 +154,48 @@ class PathologicalTests {
     }
     
     func run() -> (passed: Int, failed: Int, errored: Int, ignored: Int) {
-        print("Testing pathological cases:", Date())
-        for description in pathological.keys {
-            //### Currently our Swift version of cmark is thread-unsafe...
-            //### And 4 seconds seems to be too short for our Swift version.
-            run_pathological_test(description: description, results: results)
-            //    p = multiprocessing.Process(target=run_pathological_test,
-            //              args=(description, results,))
-            //    p.start()
-            //    # wait 4 seconds or until it finishes
-            //    p.join(4)
-            //    # kill it if still active
-            //    if p.is_alive():
-            //        print(description, '[TIMEOUT]')
-            //        if allowed_failures[description]:
-            //            results['ignored'].append(description)
-            //        else:
-            //            results['errored'].append(description)
-            //        p.terminate()
-            //        p.join()
-        }
-        
-        let passed = results.passed.count
-        let failed = results.failed.count
-        let errored = results.errored.count
-        let ignored = results.ignored.count
-        
-        print("\(passed) passed, \(failed) failed, \(errored) errored", terminator: "")
-        if ignored > 0 {
-            if verbose {
-                print("", Date())
-                print("Ignoring these allowed failures:")
-                for x in results.ignored {
-                    print(x)
+        return autoreleasepool{
+            print("Testing pathological cases:", Date())
+            for description in pathological.keys {
+                //### Currently our Swift version of cmark is thread-unsafe...
+                //### And 4 seconds seems to be too short for our Swift version.
+                run_pathological_test(description: description, results: results)
+                //    p = multiprocessing.Process(target=run_pathological_test,
+                //              args=(description, results,))
+                //    p.start()
+                //    # wait 4 seconds or until it finishes
+                //    p.join(4)
+                //    # kill it if still active
+                //    if p.is_alive():
+                //        print(description, '[TIMEOUT]')
+                //        if allowed_failures[description]:
+                //            results['ignored'].append(description)
+                //        else:
+                //            results['errored'].append(description)
+                //        p.terminate()
+                //        p.join()
+            }
+            
+            let passed = results.passed.count
+            let failed = results.failed.count
+            let errored = results.errored.count
+            let ignored = results.ignored.count
+            
+            print("\(passed) passed, \(failed) failed, \(errored) errored", terminator: "")
+            if ignored > 0 {
+                if verbose {
+                    print("", Date())
+                    print("Ignoring these allowed failures:")
+                    for x in results.ignored {
+                        print(x)
+                    }
+                } else {
+                    print(" \(ignored) ignored", Date())
                 }
             } else {
-                print(" \(ignored) ignored", Date())
+                print("", Date())
             }
-        } else {
-            print("", Date())
+            return (passed, failed, errored, ignored)
         }
-        return (passed, failed, errored, ignored)
     }
 }
