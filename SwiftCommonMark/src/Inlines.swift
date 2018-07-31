@@ -1036,7 +1036,7 @@ extension StringChunk {
                     break
                 } else if usv[i] == "\\" {
                     i = usv.index(i, offsetBy: 2)
-                } else if usv[i].isSpace || usv[i] == "<" {
+                } else if usv[i] == "\n" || usv[i] == "<" {
                     return manualScanLinkUrl2(start, output)
                 } else {
                     i = usv.index(after: i)

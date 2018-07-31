@@ -103,9 +103,7 @@ class HTMLParserError: Error {
     static let namedEntity = "&" & Re("[a-zA-Z_][a-zA-Z0-9_.-]*").cap & ";"
     static let entityCap = numericEntity | namedEntity
     
-    private func getEnclosedValue<S:StringProtocol>(_ valueStr: S) -> String
-        where S.SubSequence: StringProtocol
-    {
+    private func getEnclosedValue<S:StringProtocol>(_ valueStr: S) -> String {
         let start = valueStr.index(after: valueStr.startIndex)
         let end = valueStr.index(before: valueStr.endIndex)
         return decodeEntities(String(valueStr[start..<end]))

@@ -43,7 +43,7 @@ private func outc(_ renderer: CmarkRenderer, _ escape: CmarkEscaping,
     if needsEscaping {
         if cmark_isspace(c) {
             // use percent encoding for spaces
-            let encoded = String(format: "%%%0x2", c)
+            let encoded = String(format: "%%%02x", c)
             renderer.buffer.puts(encoded)
             renderer.column += 3
         } else {

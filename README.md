@@ -7,7 +7,7 @@ Translated by OOPer in cooperation with shlab.jp, on 2018/1/1.
 
 Based on
 <https://github.com/commonmark/cmark>
-(Latest commit a5c83d7  on Nov 19, 2017).
+(Latest commit 5c3ef83c785793c13614f7aec4c376937885a180).
 
 As this is a line-by-line translation from the original code and many files are copies as-is from the original repository,
 please take care about those original licenses shown in COPYING.orig.
@@ -25,7 +25,7 @@ You should not contact to the original authors or commonmark.org or SHLab(jp) ab
 
 ### Build
 
-Xcode 9.2, macOS SDK 10.13.
+Xcode 9.4.1, macOS SDK 10.13.
 
 ### Runtime
 

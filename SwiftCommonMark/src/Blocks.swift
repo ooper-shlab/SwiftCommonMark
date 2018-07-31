@@ -633,22 +633,24 @@ extension CmarkParser {
     func findFirstNonspace(input: StringChunk) {
         var charsToTab = TAB_STOP - (column % TAB_STOP)
         
-        firstNonspaceIndex = parseIndex
-        firstNonspaceColumn = column
-        while case let c = input[firstNonspaceIndex], c != "\0" {
-            if c == " " {
-                firstNonspaceIndex = input.index(after: firstNonspaceIndex)
-                firstNonspaceColumn += 1
-                charsToTab -= 1
-                if charsToTab == 0 {
+        if firstNonspaceIndex <= parseIndex {
+            firstNonspaceIndex = parseIndex
+            firstNonspaceColumn = column
+            while case let c = input[firstNonspaceIndex], c != "\0" {
+                if c == " " {
+                    firstNonspaceIndex = input.index(after: firstNonspaceIndex)
+                    firstNonspaceColumn += 1
+                    charsToTab -= 1
+                    if charsToTab == 0 {
+                        charsToTab = TAB_STOP
+                    }
+                } else if c == "\t" {
+                    firstNonspaceIndex = input.index(after: firstNonspaceIndex)
+                    firstNonspaceColumn += charsToTab
                     charsToTab = TAB_STOP
+                } else {
+                    break
                 }
-            } else if c == "\t" {
-                firstNonspaceIndex = input.index(after: firstNonspaceIndex)
-                firstNonspaceColumn += charsToTab
-                charsToTab = TAB_STOP
-            } else {
-                break
             }
         }
         
@@ -949,6 +951,7 @@ extension CmarkParser {
                                          startColumn: firstNonspaceColumn + 1)
                     advanceOffset(input: input, to: input.endIndex, offset:  -1, columns: false)
                 } else if (!indented || contType == .list),
+                    indent < 4,
                     case let matched = input.parseListMarker(
                         index: firstNonspaceIndex,
                         interruptsParagraph: container.type == .paragraph, dataptr: &data), matched != 0,
@@ -1154,6 +1157,9 @@ extension CmarkParser {
             
             column = 0
             blank = false
+            firstNonspaceIndex = curline.startIndex
+            firstNonspaceColumn = 0
+            indent = 0
             partiallyConsumedTab = false
             
             let input = StringChunk(content: curline)

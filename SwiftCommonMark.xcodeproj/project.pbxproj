@@ -34,7 +34,6 @@
 		D7064D831FFDC743004288A5 /* Utf8.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A771FEDE69F00B44259 /* Utf8.swift */; };
 		D7064D841FFDC747004288A5 /* Xml.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A791FEDE69F00B44259 /* Xml.swift */; };
 		D7064D851FFDC752004288A5 /* PathologicalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D90C1FFA7B6900C607DA /* PathologicalTests.swift */; };
-		D7064D861FFDC775004288A5 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C11FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift */; };
 		D7064D871FFDC777004288A5 /* UInt8+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BD466C1FEDCB6C00F8ADA0 /* UInt8+UnicodeScalarLiteralConvertible.swift */; };
 		D7064D881FFDC77B004288A5 /* StdIO+.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7EB65D71FE572830068D4EF /* StdIO+.swift */; };
 		D7064D891FFDC77F004288A5 /* Re.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8E51FF8E40200C607DA /* Re.swift */; };
@@ -65,10 +64,12 @@
 		D77A4E321FEFA5A30057F8AD /* Houdini.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7F361D01FEF6A63004E13B3 /* Houdini.swift */; };
 		D77A4E341FEFD8700057F8AD /* CaseFoldSwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77A4E331FEFD8700057F8AD /* CaseFoldSwitch.swift */; };
 		D77A4E351FEFD9840057F8AD /* CaseFoldSwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77A4E331FEFD8700057F8AD /* CaseFoldSwitch.swift */; };
+		D7BAC5091FFEA13E00923CC8 /* cmark.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = D7549A381FEDE69F00B44259 /* cmark.1 */; };
+		D7BAC5281FFF415A00923CC8 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C11FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift */; };
+		D7BAC5291FFF415B00923CC8 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C11FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift */; };
+		D7BAC52A1FFF415C00923CC8 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C11FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift */; };
 		D7BD466D1FEDCB6D00F8ADA0 /* UInt8+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BD466C1FEDCB6C00F8ADA0 /* UInt8+UnicodeScalarLiteralConvertible.swift */; };
 		D7C5D8AD1FF5249300C607DA /* Man.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7549A651FEDE69F00B44259 /* Man.swift */; };
-		D7C5D8C21FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C11FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift */; };
-		D7C5D8C31FF60B8200C607DA /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C11FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift */; };
 		D7C5D8C51FF7ADA700C607DA /* SpecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C41FF7ADA700C607DA /* SpecTests.swift */; };
 		D7C5D8C71FF7BA6000C607DA /* CMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C61FF7BA6000C607DA /* CMark.swift */; };
 		D7C5D8C91FF7D35600C607DA /* Normalize.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C5D8C81FF7D35600C607DA /* Normalize.swift */; };
@@ -131,6 +132,7 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
+				D7BAC5091FFEA13E00923CC8 /* cmark.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -553,7 +555,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0920;
-				LastUpgradeCheck = 0920;
+				LastUpgradeCheck = 0940;
 				ORGANIZATIONNAME = "OOPer (NAGATA, Atsuyuki)";
 				TargetAttributes = {
 					D7064D661FFDC6B4004288A5 = {
@@ -622,7 +624,6 @@
 				D7064D751FFDC709004288A5 /* cmark_version.c in Sources */,
 				D7064D6A1FFDC6B4004288A5 /* main.swift in Sources */,
 				D7064D731FFDC700004288A5 /* CmarkCtype.swift in Sources */,
-				D7064D861FFDC775004288A5 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7064D821FFDC73F004288A5 /* Scanners.swift in Sources */,
 				D7064D711FFDC6F8004288A5 /* StringChunk.swift in Sources */,
 				D7064D891FFDC77F004288A5 /* Re.swift in Sources */,
@@ -634,6 +635,7 @@
 				D7064D881FFDC77B004288A5 /* StdIO+.swift in Sources */,
 				D7064D8D1FFDC7D2004288A5 /* CMark.swift in Sources */,
 				D7064D8C1FFDC78B004288A5 /* NSRegularExpression+pythonLike.swift in Sources */,
+				D7BAC52A1FFF415C00923CC8 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7064D871FFDC777004288A5 /* UInt8+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7064D811FFDC73B004288A5 /* Render.swift in Sources */,
 				D7064D851FFDC752004288A5 /* PathologicalTests.swift in Sources */,
@@ -656,6 +658,7 @@
 				D7549AAD1FEDE6A100B44259 /* Scanners.swift in Sources */,
 				D7C5D9251FFB937600C607DA /* StringBuffer.swift in Sources */,
 				D7549AA01FEDE6A100B44259 /* Latex.swift in Sources */,
+				D7BAC5281FFF415A00923CC8 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7BD466D1FEDCB6D00F8ADA0 /* UInt8+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7549A9A1FEDE6A100B44259 /* Html.swift in Sources */,
 				D7549AA41FEDE6A100B44259 /* Man.swift in Sources */,
@@ -663,7 +666,6 @@
 				D7549A8F1FEDE6A000B44259 /* Cmark.swift in Sources */,
 				D7549A921FEDE6A000B44259 /* CmarkVersion.swift in Sources */,
 				D7549AA61FEDE6A100B44259 /* Node.swift in Sources */,
-				D7C5D8C21FF60B0700C607DA /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7F361D11FEF6A63004E13B3 /* Houdini.swift in Sources */,
 				D7549AA91FEDE6A100B44259 /* References.swift in Sources */,
 				D7549AB11FEDE6A100B44259 /* Xml.swift in Sources */,
@@ -691,6 +693,7 @@
 				D7F361BD1FEE8E29004E13B3 /* Cmark.swift in Sources */,
 				D7C5D8FC1FF8F98A00C607DA /* NSRegularExpression+pythonLike.swift in Sources */,
 				D7064D291FFCC89F004288A5 /* StringChunk.swift in Sources */,
+				D7BAC5291FFF415B00923CC8 /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7F361CD1FEE8EAA004E13B3 /* Xml.swift in Sources */,
 				D7C5D8EB1FF8EE2F00C607DA /* TextReader.swift in Sources */,
 				D7064D281FFCC893004288A5 /* StringBuffer.swift in Sources */,
@@ -708,7 +711,6 @@
 				D7F361C61FEE8E8A004E13B3 /* Latex.swift in Sources */,
 				D7F361C71FEE8E90004E13B3 /* Node.swift in Sources */,
 				D7C5D90D1FFA7B6A00C607DA /* PathologicalTests.swift in Sources */,
-				D7C5D8C31FF60B8200C607DA /* Int32+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D7F361CE1FEE8EEC004E13B3 /* UInt8+UnicodeScalarLiteralConvertible.swift in Sources */,
 				D77A4E351FEFD9840057F8AD /* CaseFoldSwitch.swift in Sources */,
 				D7C5D8ED1FF8F63700C607DA /* String+pythonLike.swift in Sources */,
@@ -769,6 +771,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -776,6 +779,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -829,6 +833,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -836,6 +841,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;

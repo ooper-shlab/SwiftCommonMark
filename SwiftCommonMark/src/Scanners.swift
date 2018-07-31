@@ -120,11 +120,11 @@ let escaped_char = Re("\\\\[!\"#$%&'()*+,./:;<=>?@\\[\\\\\\]^_`{|}~-]")
 
 let tagname = Re("[A-Za-z][A-Za-z0-9-]*")
 
-let blocktagname = ["address","article","aside","base","basefont","blockquote","body","caption","center","col","colgroup","dd","details","dialog","dir","div","dl","dt","fieldset","figcaption","figure","footer","form","frame","frameset","h1","h2","h3","h4","h5","h6","head","header","hr","html","iframe","legend","li","link","main","menu","menuitem","meta","nav","noframes","ol","optgroup","option","p","param","section","source","title","summary","table","tbody","td","tfoot","th","thead","title","tr","track","ul"].i
+let blocktagname = ["address","article","aside","base","basefont","blockquote","body","caption","center","col","colgroup","dd","details","dialog","dir","div","dl","dt","fieldset","figcaption","figure","footer","form","frame","frameset","h1","h2","h3","h4","h5","h6","head","header","hr","html","iframe","legend","li","link","main","menu","menuitem","nav","noframes","ol","optgroup","option","p","param","section","source","title","summary","table","tbody","td","tfoot","th","thead","title","tr","track","ul"].i
 
 let attributename = Re("[a-zA-Z_:][a-zA-Z0-9:._-]*")
 
-let unquotedvalue = Re("[^\"'=<>`\\x00]+")
+let unquotedvalue = Re("[^ \\t\\r\\n\\x0C\\f\"'=<>`\\x00]+")
 let singlequotedvalue = Re("'[^'\\x00]*'")
 let doublequotedvalue = Re("\"[^\"\\x00]*\"")
 
@@ -426,7 +426,7 @@ private func _scan_close_code_fence(_ p: ReEnv) -> Int {
 //    const unsigned char *marker = NULL;
 //    const unsigned char *start = p;
 //    /*!re2c
-//     [&] ([#] ([Xx][A-Fa-f0-9]{1,8}|[0-9]{1,8}) |[A-Za-z][A-Za-z0-9]{1,31} ) [;]
+//     [&] ([#] ([Xx][A-Fa-f0-9]{1,6}|[0-9]{1,7}) |[A-Za-z][A-Za-z0-9]{1,31} ) [;]
 //     { return (bufsize_t)(p - start); }
 //     * { return 0; }
 //     */

@@ -92,27 +92,31 @@ class PathologicalTests {
         
         //### may take 40 sec (Release, non-dubuggable)
         //### may take 5 minutes (Debug build)
+        //### The number reduced from 10000 to 5000, so may take less.
         pathological["backticks"] =
-            ("".join((1...10000).map{x in ("e" + "`" * x)}),
+            ("".join((1...5000).map{x in ("e" + "`" * x)}),
              try! NSRegularExpression(pattern: "^<p>[e`]*</p>\n$"))
         
         //### may take half a minute (Debug build)
+        //### The number reduced from 50000 to 30000, so may take less.
         pathological["unclosed links A"] =
-            ("[a](<b" * 50000,
-             try! NSRegularExpression(pattern: "(\\[a\\]\\(&lt;b){50000}"))
+            ("[a](<b" * 30000,
+             try! NSRegularExpression(pattern: "(\\[a\\]\\(&lt;b){30000}"))
         
         pathological["unclosed links B"] =
-            ("[a](b" * 50000,
-             try! NSRegularExpression(pattern: "(\\[a\\]\\(b){50000}"))
+            ("[a](b" * 30000,
+             try! NSRegularExpression(pattern: "(\\[a\\]\\(b){30000}"))
         
         //### may take 2 minutes (Release, non-dubuggable)
         //### Consumes 3GB of memory, 15 minutes (Debug build)
-        let n = 50000, m = 16
+        //let n = 50000, m = 16
         //### 300MB, 1 minute (Debug build)
         //let n = 50000, m = 1
-        pathological["many references"] =
-            ((1...n*m).lazy.map{x in ("[\(x)]: u\n")}.joined(separator: "") + "[0] " * n,
-             try! NSRegularExpression(pattern: "(\\[0\\] ){\(n-1)}"))
+        //### far better, but seems to be commented out in the original pathological_tests.py
+//        let n = 5000, m = 16
+//        pathological["many references"] =
+//            ((1...n*m).lazy.map{x in ("[\(x)]: u\n")}.joined(separator: "") + "[0] " * n,
+//             try! NSRegularExpression(pattern: "(\\[0\\] ){\(n-1)}"))
         
         //whitespaceRe = try! NSRegularExpression(pattern: "\\s+")
         
